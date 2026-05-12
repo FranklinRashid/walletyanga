@@ -1,0 +1,89 @@
+<!DOCTYPE html>
+<html lang="{{ str_replace('_', '-', app()->getLocale()) }}">
+    <head>
+        <meta charset="utf-8">
+        <meta name="viewport" content="width=device-width, initial-scale=1">
+        <title>Admin · Wallet Yanga</title>
+        @vite(['resources/css/app.css', 'resources/js/app.js'])
+    </head>
+    <body class="bg-zinc-950 text-zinc-100 antialiased">
+        <main class="mx-auto flex min-h-screen w-full max-w-7xl flex-col gap-8 px-6 py-8">
+            <nav class="flex flex-wrap items-center justify-between gap-4 border-b border-zinc-800 pb-5">
+                <div>
+                    <p class="text-sm font-semibold text-white">Wallet Yanga Admin</p>
+                    <p class="text-sm text-zinc-400">{{ auth()->user()->name }} · {{ str_replace('_', ' ', auth()->user()->role) }}</p>
+                </div>
+                <div class="flex items-center gap-3">
+                    @if (auth()->user()->role === 'super_admin')
+                        <a href="{{ route('admin.staff.index') }}" class="rounded-md border border-zinc-700 px-3 py-2 text-sm font-medium text-zinc-200 hover:border-zinc-500">Staff</a>
+                    @endif
+                    <a href="{{ route('wallet.dashboard') }}" class="rounded-md border border-zinc-700 px-3 py-2 text-sm font-medium text-zinc-200 hover:border-zinc-500">User Dashboard</a>
+                    <form method="POST" action="{{ route('logout') }}">
+                        @csrf
+                        <button type="submit" class="rounded-md border border-zinc-700 px-3 py-2 text-sm font-medium text-zinc-200 hover:border-zinc-500">Logout</button>
+                    </form>
+                </div>
+            </nav>
+
+            <section>
+                <p class="text-sm font-semibold uppercase tracking-wide text-emerald-300">Operations cockpit</p>
+                <h1 class="mt-3 text-4xl font-semibold tracking-tight text-white">Admin Dashboard</h1>
+            </section>
+
+            <section class="grid gap-3 sm:grid-cols-2 lg:grid-cols-5">
+                <div class="rounded-lg border border-zinc-800 bg-zinc-900 p-4">
+                    <p class="text-sm text-zinc-400">Users</p>
+                    <p class="mt-2 text-3xl font-semibold">{{ $usersCount }}</p>
+                </div>
+                <div class="rounded-lg border border-zinc-800 bg-zinc-900 p-4">
+                    <p class="text-sm text-zinc-400">Staff</p>
+                    <p class="mt-2 text-3xl font-semibold">{{ $staffCount }}</p>
+                </div>
+                <div class="rounded-lg border border-zinc-800 bg-zinc-900 p-4">
+                    <p class="text-sm text-zinc-400">Wallets</p>
+                    <p class="mt-2 text-3xl font-semibold">{{ $walletsCount }}</p>
+                </div>
+                <div class="rounded-lg border border-zinc-800 bg-zinc-900 p-4">
+                    <p class="text-sm text-zinc-400">Deposits</p>
+                    <p class="mt-2 text-3xl font-semibold">{{ $depositsCount }}</p>
+                </div>
+                <div class="rounded-lg border border-zinc-800 bg-zinc-900 p-4">
+                    <p class="text-sm text-zinc-400">Cards</p>
+                    <p class="mt-2 text-3xl font-semibold">{{ $cardsCount }}</p>
+                </div>
+            </section>
+
+            <section class="rounded-lg border border-zinc-800 bg-zinc-900">
+                <div class="border-b border-zinc-800 px-4 py-3">
+                    <h2 class="font-semibold">Recent Ledger Transactions</h2>
+                </div>
+                <div class="overflow-x-auto">
+                    <table class="w-full text-left text-sm">
+                        <thead class="text-xs uppercase text-zinc-500">
+                            <tr>
+                                <th class="px-4 py-3">Reference</th>
+                                <th class="px-4 py-3">Type</th>
+                                <th class="px-4 py-3">Status</th>
+                                <th class="px-4 py-3">Posted</th>
+                            </tr>
+                        </thead>
+                        <tbody class="divide-y divide-zinc-800">
+                            @forelse ($ledgerTransactions as $transaction)
+                                <tr>
+                                    <td class="px-4 py-3 font-mono text-xs">{{ $transaction->reference }}</td>
+                                    <td class="px-4 py-3">{{ $transaction->type }}</td>
+                                    <td class="px-4 py-3">{{ $transaction->status }}</td>
+                                    <td class="px-4 py-3 text-zinc-400">{{ optional($transaction->posted_at)->diffForHumans() }}</td>
+                                </tr>
+                            @empty
+                                <tr>
+                                    <td colspan="4" class="px-4 py-6 text-zinc-500">No ledger transactions posted yet.</td>
+                                </tr>
+                            @endforelse
+                        </tbody>
+                    </table>
+                </div>
+            </section>
+        </main>
+    </body>
+</html>
