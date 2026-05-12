@@ -27,6 +27,23 @@
                 </div>
             @endif
 
+            @if (! in_array($user->kycProfile?->status, ['approved', 'pending'], true))
+                <section class="flex flex-wrap items-center justify-between gap-4 rounded-lg border border-amber-400/30 bg-amber-400/10 px-4 py-4">
+                    <div>
+                        <p class="text-sm font-semibold text-amber-200">KYC required</p>
+                        <p class="mt-1 text-sm text-amber-100/80">Submit your identity details before wallet funding, FX conversion, and virtual cards are enabled.</p>
+                    </div>
+                    <a href="{{ route('kyc.edit') }}" class="rounded-md bg-amber-300 px-3 py-2 text-sm font-semibold text-zinc-950 hover:bg-amber-200">
+                        Start KYC
+                    </a>
+                </section>
+            @elseif ($user->kycProfile?->status === 'pending')
+                <section class="rounded-lg border border-sky-400/30 bg-sky-400/10 px-4 py-4">
+                    <p class="text-sm font-semibold text-sky-200">KYC under review</p>
+                    <p class="mt-1 text-sm text-sky-100/80">Your details have been submitted and are waiting for compliance review.</p>
+                </section>
+            @endif
+
             <section class="grid gap-6 lg:grid-cols-[1.1fr_0.9fr]">
                 <div>
                     <p class="text-sm font-semibold uppercase tracking-wide text-emerald-300">Malawi fintech core</p>

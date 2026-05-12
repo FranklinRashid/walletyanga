@@ -3,6 +3,8 @@
 namespace App\Http\Controllers\Auth;
 
 use App\Http\Controllers\Controller;
+use App\Models\User;
+use App\Support\UserRoles;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
@@ -31,7 +33,38 @@ class AuthenticatedSessionController extends Controller
 
         $request->session()->regenerate();
 
-        return redirect()->intended(route('wallet.dashboard'));
+        /** @var User $user */
+        $user = Auth::user();
+        $fallback = $user->isStaff()
+            ? route('admin.dashboard')
+            : route('wallet.dashboard');
+
+        $intended = $request->session()->get('url.intended');
+        if (is_string($intended) && ! $this->userMayFollowIntendedUrl($user, $intended)) {
+            $request->session()->forget('url.intended');
+        }
+
+        return redirect()->intended($fallback);
+    }
+
+    private function userMayFollowIntendedUrl(User $user, string $url): bool
+    {
+        $path = parse_url($url, PHP_URL_PATH);
+        if (! is_string($path) || $path === '') {
+            return true;
+        }
+
+        $path = '/'.ltrim($path, '/');
+
+        if (str_starts_with($path, '/admin/staff')) {
+            return $user->role === UserRoles::SUPER_ADMIN;
+        }
+
+        if (str_starts_with($path, '/admin')) {
+            return $user->isStaff();
+        }
+
+        return true;
     }
 
     public function destroy(Request $request): RedirectResponse

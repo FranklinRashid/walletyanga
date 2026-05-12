@@ -3,6 +3,7 @@
 namespace App\Http\Controllers\Auth;
 
 use App\Domain\Wallet\WalletService;
+use App\Enums\KycProfileStatus;
 use App\Http\Controllers\Controller;
 use App\Models\KycProfile;
 use App\Models\User;
@@ -48,7 +49,7 @@ class RegisteredUserController extends Controller
 
             KycProfile::query()->create([
                 'user_id' => $user->id,
-                'status' => 'not_started',
+                'status' => KycProfileStatus::NOT_STARTED->value,
                 'tier' => 'basic',
                 'risk_rating' => 'standard',
             ]);

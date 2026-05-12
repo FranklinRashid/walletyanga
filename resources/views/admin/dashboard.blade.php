@@ -14,6 +14,7 @@
                     <p class="text-sm text-zinc-400">{{ auth()->user()->name }} · {{ str_replace('_', ' ', auth()->user()->role) }}</p>
                 </div>
                 <div class="flex items-center gap-3">
+                    <a href="{{ route('admin.kyc.index') }}" class="rounded-md border border-zinc-700 px-3 py-2 text-sm font-medium text-zinc-200 hover:border-zinc-500">KYC queue</a>
                     @if (auth()->user()->role === 'super_admin')
                         <a href="{{ route('admin.staff.index') }}" class="rounded-md border border-zinc-700 px-3 py-2 text-sm font-medium text-zinc-200 hover:border-zinc-500">Staff</a>
                     @endif
@@ -30,7 +31,7 @@
                 <h1 class="mt-3 text-4xl font-semibold tracking-tight text-white">Admin Dashboard</h1>
             </section>
 
-            <section class="grid gap-3 sm:grid-cols-2 lg:grid-cols-5">
+            <section class="grid gap-3 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-6">
                 <div class="rounded-lg border border-zinc-800 bg-zinc-900 p-4">
                     <p class="text-sm text-zinc-400">Users</p>
                     <p class="mt-2 text-3xl font-semibold">{{ $usersCount }}</p>
@@ -39,6 +40,11 @@
                     <p class="text-sm text-zinc-400">Staff</p>
                     <p class="mt-2 text-3xl font-semibold">{{ $staffCount }}</p>
                 </div>
+                <a href="{{ route('admin.kyc.index') }}" class="rounded-lg border border-amber-900/60 bg-amber-950/30 p-4 hover:border-amber-700/80">
+                    <p class="text-sm text-amber-200/90">KYC pending</p>
+                    <p class="mt-2 text-3xl font-semibold text-amber-100">{{ $pendingKycCount }}</p>
+                    <p class="mt-2 text-xs text-amber-200/70">Open queue →</p>
+                </a>
                 <div class="rounded-lg border border-zinc-800 bg-zinc-900 p-4">
                     <p class="text-sm text-zinc-400">Wallets</p>
                     <p class="mt-2 text-3xl font-semibold">{{ $walletsCount }}</p>
