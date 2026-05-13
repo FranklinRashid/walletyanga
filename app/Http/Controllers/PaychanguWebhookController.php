@@ -43,15 +43,14 @@ class PaychanguWebhookController extends Controller
         }
 
         $verification = $paychangu->verifyPayment($intent->tx_ref);
-        $status = data_get($verification, 'status') ?? data_get($verification, 'data.status');
 
-        if (in_array($status, ['success', 'successful'], true)) {
-            $deposits->postVerifiedDeposit($intent, $verification);
+        if ($deposits->settleFromVerification($intent, $verification)) {
             $event->forceFill(['processing_status' => 'processed'])->save();
 
             return response()->json(['message' => 'Deposit credited']);
         }
 
+        $status = data_get($verification, 'status') ?? data_get($verification, 'data.status');
         $event->forceFill(['processing_status' => 'ignored', 'processing_error' => "Payment status {$status}"])->save();
 
         return response()->json(['message' => 'Payment not successful']);

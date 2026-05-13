@@ -15,11 +15,16 @@ class FxConversionService
     public function __construct(
         private readonly WalletService $wallets,
         private readonly LedgerService $ledger,
+        private readonly FxSpotRateService $spotRates,
     ) {
     }
 
-    public function quoteMwkToUsd(User $user, int $mwkAmountMinor, string $rate = '1700.00000000', int $spreadBps = 150): FxQuote
+    public function quoteMwkToUsd(User $user, int $mwkAmountMinor, ?string $rate = null, ?int $spreadBps = null): FxQuote
     {
+        $spot = $this->spotRates->getMwkPerUsd();
+        $rate ??= number_format((float) $spot['rate'], 8, '.', '');
+        $spreadBps ??= (int) config('fx.conversion_spread_bps', 150);
+
         $effectiveRate = (float) $rate * (1 + ($spreadBps / 10_000));
         $usdMinor = (int) floor(($mwkAmountMinor / 100) / $effectiveRate * 100);
 
@@ -34,6 +39,10 @@ class FxConversionService
             'to_amount_minor' => $usdMinor,
             'expires_at' => now()->addMinutes(5),
             'status' => 'quoted',
+            'metadata' => [
+                'spot_source' => $spot['source'],
+                'spot_as_of' => $spot['as_of'],
+            ],
         ]);
     }
 

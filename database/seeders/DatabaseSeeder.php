@@ -18,9 +18,11 @@ class DatabaseSeeder extends Seeder
     {
         $this->seedSystemAccounts();
 
-        User::factory()->create([
-            'name' => 'Test User',
+        User::query()->firstOrCreate([
             'email' => 'test@example.com',
+        ], [
+            'name' => 'Test User',
+            'password' => 'password',
             'role' => 'customer',
             'status' => 'active',
         ]);

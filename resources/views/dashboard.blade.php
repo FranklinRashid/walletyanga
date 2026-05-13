@@ -13,12 +13,19 @@
                     <p class="text-sm font-semibold text-white">Wallet Yanga</p>
                     <p class="text-sm text-zinc-400">{{ $user->email }}</p>
                 </div>
-                <form method="POST" action="{{ route('logout') }}">
-                    @csrf
-                    <button type="submit" class="rounded-md border border-zinc-700 px-3 py-2 text-sm font-medium text-zinc-200 hover:border-zinc-500">
-                        Logout
-                    </button>
-                </form>
+                <div class="flex flex-wrap items-center gap-2">
+                    @if ($user->kycProfile?->status === 'approved')
+                        <a href="{{ route('wallet.add-money') }}" class="rounded-md bg-emerald-600 px-3 py-2 text-sm font-semibold text-white hover:bg-emerald-500">
+                            Add money
+                        </a>
+                    @endif
+                    <form method="POST" action="{{ route('logout') }}">
+                        @csrf
+                        <button type="submit" class="rounded-md border border-zinc-700 px-3 py-2 text-sm font-medium text-zinc-200 hover:border-zinc-500">
+                            Logout
+                        </button>
+                    </form>
+                </div>
             </nav>
 
             @if (session('status'))
@@ -75,7 +82,12 @@
             <section class="grid gap-4 lg:grid-cols-3">
                 <div class="rounded-lg border border-zinc-800 bg-zinc-900">
                     <div class="border-b border-zinc-800 px-4 py-3">
-                        <h2 class="font-semibold">Wallet Ledger</h2>
+                        <div class="flex items-center justify-between gap-3">
+                            <h2 class="font-semibold">Wallet Ledger</h2>
+                            @if ($user->kycProfile?->status === 'approved')
+                                <a href="{{ route('wallet.convert') }}" class="text-sm font-medium text-emerald-300 hover:text-emerald-200">Convert</a>
+                            @endif
+                        </div>
                     </div>
                     <div class="divide-y divide-zinc-800">
                         @forelse ($wallets as $wallet)

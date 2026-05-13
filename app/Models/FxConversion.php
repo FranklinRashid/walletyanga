@@ -14,6 +14,11 @@ class FxConversion extends Model
         'status',
     ];
 
+    public function user(): BelongsTo
+    {
+        return $this->belongsTo(User::class);
+    }
+
     public function quote(): BelongsTo
     {
         return $this->belongsTo(FxQuote::class, 'fx_quote_id');

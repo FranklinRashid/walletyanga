@@ -7,9 +7,14 @@ use Illuminate\Support\Facades\Http;
 class PaychanguClient
 {
     public function __construct(
+        private readonly ?string $publicKey = null,
         private readonly ?string $secretKey = null,
         private readonly ?string $webhookSecret = null,
-    ) {
+    ) {}
+
+    public function publicKey(): ?string
+    {
+        return $this->publicKey;
     }
 
     public function createCheckout(array $payload): array
