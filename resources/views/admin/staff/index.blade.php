@@ -6,15 +6,15 @@
         <title>Staff · Wallet Yanga</title>
         @vite(['resources/css/app.css', 'resources/js/app.js'])
     </head>
-    <body class="bg-zinc-950 text-zinc-100 antialiased">
+    <body class="bg-[#f4f5f7] text-zinc-950 antialiased">
         <main class="mx-auto flex min-h-screen w-full max-w-6xl flex-col gap-8 px-6 py-8">
-            <nav class="flex flex-wrap items-center justify-between gap-4 border-b border-zinc-800 pb-5">
+            <nav class="flex flex-wrap items-center justify-between gap-4 border-b border-zinc-200 pb-5">
                 <div>
-                    <p class="text-sm font-semibold text-white">Staff Management</p>
-                    <p class="text-sm text-zinc-400">Create internal users for compliance and operations.</p>
+                    <p class="text-sm font-semibold text-black">Staff Management</p>
+                    <p class="text-sm text-zinc-500">Create internal users for compliance and operations.</p>
                 </div>
                 <div class="flex gap-3">
-                    <a href="{{ route('admin.dashboard') }}" class="rounded-md border border-zinc-700 px-3 py-2 text-sm font-medium text-zinc-200 hover:border-zinc-500">Admin</a>
+                    <a href="{{ route('admin.dashboard') }}" class="rounded-md border border-zinc-300 px-3 py-2 text-sm font-medium text-zinc-700 hover:border-zinc-400">Admin</a>
                     <a href="{{ route('admin.staff.create') }}" class="rounded-md bg-emerald-400 px-3 py-2 text-sm font-semibold text-zinc-950 hover:bg-emerald-300">Create Staff</a>
                 </div>
             </nav>
@@ -25,7 +25,7 @@
                 </div>
             @endif
 
-            <section class="rounded-lg border border-zinc-800 bg-zinc-900">
+            <section class="rounded-lg border border-zinc-200 bg-white">
                 <div class="overflow-x-auto">
                     <table class="w-full text-left text-sm">
                         <thead class="text-xs uppercase text-zinc-500">
@@ -54,5 +54,6 @@
                 </div>
             </section>
         </main>
+        @include("partials.mobile-nav")
     </body>
 </html>

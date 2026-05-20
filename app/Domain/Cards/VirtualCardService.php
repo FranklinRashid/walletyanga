@@ -24,6 +24,7 @@ class VirtualCardService
         $this->wallets->ensureUserWallet($user, 'USD');
 
         $providerCard = $this->issuer->createVirtualCard([
+            'user' => $user,
             'user_id' => $user->id,
             'email' => $user->email,
             'currency' => 'USD',
@@ -31,14 +32,26 @@ class VirtualCardService
 
         return VirtualCard::query()->create([
             'user_id' => $user->id,
-            'provider' => 'sandbox',
+            'provider' => $providerCard['provider'] ?? config('services.cards.issuer', 'sandbox'),
             'provider_card_id' => $providerCard['provider_card_id'],
             'masked_pan' => $providerCard['masked_pan'] ?? null,
             'brand' => $providerCard['brand'] ?? null,
-            'currency' => 'USD',
-            'status' => 'active',
+            'currency' => $providerCard['currency'] ?? 'USD',
+            'status' => $providerCard['status'] ?? 'active',
             'nickname' => $nickname,
+            'daily_limit_minor' => $providerCard['daily_limit_minor'] ?? null,
+            'monthly_limit_minor' => $providerCard['monthly_limit_minor'] ?? null,
+            'controls' => $providerCard['controls'] ?? null,
         ]);
+    }
+
+    public function revealDetails(VirtualCard $card): array
+    {
+        if ($card->status !== 'active') {
+            throw new InvalidArgumentException('Only active cards can be revealed.');
+        }
+
+        return $this->issuer->revealDetails($card);
     }
 
     public function authorize(VirtualCard $card, string $providerAuthorizationId, int $amountMinor, array $metadata = []): CardAuthorization

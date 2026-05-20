@@ -4,6 +4,7 @@ namespace App\Providers;
 
 use App\Domain\Cards\CardIssuerProvider;
 use App\Domain\Cards\SandboxCardIssuerProvider;
+use App\Domain\Cards\SudoAfricaCardIssuerProvider;
 use App\Domain\Payments\PaychanguClient;
 use Illuminate\Console\Events\CommandStarting;
 use Illuminate\Support\Facades\Event;
@@ -25,7 +26,12 @@ class AppServiceProvider extends ServiceProvider
             );
         });
 
-        $this->app->bind(CardIssuerProvider::class, SandboxCardIssuerProvider::class);
+        $this->app->bind(CardIssuerProvider::class, function () {
+            return match (config('services.cards.issuer', 'sandbox')) {
+                'sudo', 'sudo_africa' => app(SudoAfricaCardIssuerProvider::class),
+                default => app(SandboxCardIssuerProvider::class),
+            };
+        });
     }
 
     /**

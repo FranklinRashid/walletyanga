@@ -10,6 +10,7 @@ use App\Http\Controllers\FxSpotRateController;
 use App\Http\Controllers\KycSubmissionController;
 use App\Http\Controllers\PaychanguCallbackController;
 use App\Http\Controllers\PaychanguWebhookController;
+use App\Http\Controllers\VirtualCardController;
 use App\Http\Controllers\WalletConversionController;
 use App\Http\Controllers\WalletDashboardController;
 use Illuminate\Http\Request;
@@ -31,6 +32,9 @@ Route::middleware('auth')->group(function (): void {
     Route::get('/wallet/convert', [WalletConversionController::class, 'create'])->name('wallet.convert');
     Route::post('/wallet/convert/quote', [WalletConversionController::class, 'quote'])->name('wallet.convert.quote');
     Route::post('/wallet/convert/quotes/{quote}/accept', [WalletConversionController::class, 'accept'])->name('wallet.convert.accept');
+    Route::get('/wallet/cards', [VirtualCardController::class, 'index'])->name('wallet.cards');
+    Route::post('/wallet/cards', [VirtualCardController::class, 'store'])->name('wallet.cards.store');
+    Route::post('/wallet/cards/{virtualCard}/reveal', [VirtualCardController::class, 'reveal'])->name('wallet.cards.reveal');
     Route::get('/api/fx/usd-mwk', FxSpotRateController::class)
         ->middleware('throttle:120,1')
         ->name('api.fx.usd-mwk');

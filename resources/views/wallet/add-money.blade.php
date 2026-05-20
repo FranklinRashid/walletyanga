@@ -6,80 +6,102 @@
         <title>Add money · Wallet Yanga</title>
         @vite(['resources/css/app.css', 'resources/js/app.js'])
     </head>
-    <body class="bg-zinc-950 text-zinc-100 antialiased">
-        <main class="mx-auto flex min-h-screen w-full max-w-lg flex-col gap-8 px-6 py-8">
-            <nav class="flex flex-wrap items-center justify-between gap-4 border-b border-zinc-800 pb-5">
-                <div>
-                    <p class="text-sm font-semibold text-white">Add money</p>
-                    <p class="text-sm text-zinc-400">Pay with Paychangu · settled in MWK</p>
+    <body class="bg-[#f4f5f7] text-zinc-950 antialiased">
+        <main class="mx-auto min-h-screen w-full max-w-5xl px-4 pb-20 pt-16 sm:px-6 lg:px-8">
+            <nav class="flex items-center justify-between gap-3">
+                <div class="min-w-0">
+                    <a href="{{ route('wallet.dashboard') }}" class="text-sm font-semibold text-emerald-300 hover:text-emerald-200">Wallet Yanga</a>
+                    <h1 class="mt-1 text-2xl font-semibold text-black">Add money</h1>
                 </div>
-                <a href="{{ route('wallet.dashboard') }}" class="rounded-md border border-zinc-700 px-3 py-2 text-sm font-medium text-zinc-200 hover:border-zinc-500">Back</a>
+                <a href="{{ route('wallet.dashboard') }}" class="rounded-md border border-zinc-300 px-3 py-2 text-sm font-medium text-zinc-700 hover:border-zinc-400">Back</a>
             </nav>
 
-            @if (session('status'))
-                <div class="rounded-lg border border-amber-500/30 bg-amber-500/10 px-4 py-3 text-sm text-amber-200">
-                    {{ session('status') }}
-                </div>
-            @endif
-
-            @if ($errors->any())
-                <div class="rounded-lg border border-red-500/30 bg-red-500/10 px-4 py-3 text-sm text-red-200">
-                    <ul class="list-inside list-disc space-y-1">
-                        @foreach ($errors->all() as $error)
-                            <li>{{ $error }}</li>
-                        @endforeach
-                    </ul>
-                </div>
-            @endif
-
-            <section class="rounded-lg border border-zinc-800 bg-zinc-900 p-5">
-                <p class="text-xs font-semibold uppercase tracking-wide text-zinc-500">Reference rate</p>
-                <p class="mt-2 text-lg font-semibold text-white">
-                    1 USD ≈ <span id="rate-display">{{ number_format($spot['rate'], 2) }}</span> MWK
-                </p>
-                <p class="mt-1 flex flex-wrap items-center gap-x-2 gap-y-1 text-xs text-zinc-500">
-                    <span id="rate-meta-text">
-                        @if ($spot['as_of'])
-                            As of {{ $spot['as_of'] }} ·
-                        @endif
-                        Source: {{ $spot['source'] === 'currency-api' ? 'live market data' : 'configured fallback' }}
-                    </span>
-                    <button type="button" id="refresh-rate" class="text-emerald-400 hover:text-emerald-300 disabled:opacity-50">Refresh</button>
-                </p>
-                <p class="mt-3 text-xs leading-relaxed text-zinc-500">
-                    Rates are indicative for planning. Your bank or Paychangu may apply a slightly different settlement amount.
-                </p>
-            </section>
-
-            <section class="rounded-lg border border-zinc-800 bg-zinc-900 p-5">
-                <form method="POST" action="{{ route('wallet.add-money.store') }}" class="space-y-5" id="add-money-form">
-                    @csrf
-                    <div>
-                        <label for="input_currency" class="block text-sm font-medium text-zinc-300">I want to enter the amount in</label>
-                        <select id="input_currency" name="input_currency" class="mt-2 w-full rounded-md border border-zinc-700 bg-zinc-950 px-3 py-2 text-sm text-white outline-none focus:border-emerald-400">
-                            <option value="MWK" @selected(old('input_currency', 'MWK') === 'MWK')>Malawian Kwacha (MWK)</option>
-                            <option value="USD" @selected(old('input_currency') === 'USD')>US Dollar (USD)</option>
-                        </select>
+            <div class="mt-5 space-y-3">
+                @if (session('status'))
+                    <div class="rounded-lg border border-amber-500/30 bg-amber-500/10 px-4 py-3 text-sm text-amber-100">
+                        {{ session('status') }}
                     </div>
-                    <div>
-                        <label for="amount" class="block text-sm font-medium text-zinc-300">Amount</label>
-                        <input id="amount" name="amount" type="number" inputmode="decimal" step="0.01" min="0.01" required
-                            value="{{ old('amount') }}"
-                            class="mt-2 w-full rounded-md border border-zinc-700 bg-zinc-950 px-3 py-2 text-sm text-white outline-none focus:border-emerald-400"
-                            placeholder="0.00">
+                @endif
+
+                @if ($errors->any())
+                    <div class="rounded-lg border border-red-500/30 bg-red-500/10 px-4 py-3 text-sm text-red-100">
+                        {{ $errors->first() }}
                     </div>
-                    <p class="text-xs text-zinc-500">Minimum charge: {{ number_format($minMwkMinor / 100, 2) }} MWK · Maximum: {{ number_format($maxMwkMinor / 100, 2) }} MWK.</p>
-                    <div class="rounded-md border border-zinc-800 bg-zinc-950/80 px-4 py-3 text-sm">
-                        <p class="text-zinc-500">Approximate equivalent</p>
-                        <p id="equivalent-line" class="mt-1 font-medium text-white">Enter an amount to see the conversion.</p>
-                        <p class="mt-2 text-xs text-zinc-500">
-                            You will pay <span class="text-zinc-300" id="pay-mwk-line">—</span> MWK via Paychangu (charge currency).
+                @endif
+            </div>
+
+            <section class="mt-5 grid gap-4 lg:grid-cols-[0.8fr_1.2fr] lg:items-start">
+                <div class="space-y-4">
+                    <section class="rounded-lg border border-zinc-200 bg-white p-4">
+                        <p class="text-xs font-semibold uppercase text-zinc-500">Payment method</p>
+                        <div class="mt-4 flex items-center gap-3">
+                            <div class="flex h-12 w-12 items-center justify-center rounded-lg bg-emerald-400 text-lg font-semibold text-zinc-950">P</div>
+                            <div>
+                                <p class="font-semibold text-black">Secure checkout</p>
+                                <p class="mt-1 text-sm text-zinc-500">Settles into your MWK wallet</p>
+                            </div>
+                        </div>
+                    </section>
+
+                    <section class="rounded-lg border border-zinc-200 bg-white p-4">
+                        <p class="text-xs font-semibold uppercase text-zinc-500">Reference rate</p>
+                        <p class="mt-2 text-2xl font-semibold text-black">
+                            1 USD ≈ <span id="rate-display">{{ number_format($spot['rate'], 2) }}</span> MWK
                         </p>
+                        <p class="mt-2 text-xs leading-5 text-zinc-500" id="rate-meta-text">
+                            @if ($spot['as_of'])
+                                As of {{ $spot['as_of'] }} ·
+                            @endif
+                            Source: {{ $spot['source'] === 'currency-api' ? 'live market data' : 'configured fallback' }}
+                        </p>
+                        <button type="button" id="refresh-rate" class="mt-4 rounded-md border border-zinc-300 px-3 py-2 text-sm font-medium text-emerald-300 hover:border-emerald-400/50 disabled:opacity-50">
+                            Refresh rate
+                        </button>
+                    </section>
+                </div>
+
+                <section class="rounded-lg border border-zinc-200 bg-white p-4 sm:p-5">
+                    <div class="flex items-start justify-between gap-3">
+                        <div>
+                            <p class="text-sm font-semibold text-black">Top up wallet</p>
+                            <p class="mt-1 text-sm text-zinc-500">Choose a currency, enter amount, then continue to checkout.</p>
+                        </div>
+                        <span class="rounded-full border border-zinc-300 px-2 py-1 text-xs text-zinc-600">Step 1 of 2</span>
                     </div>
-                    <button type="submit" class="w-full rounded-md bg-emerald-600 px-4 py-2.5 text-sm font-semibold text-white hover:bg-emerald-500">
-                        Continue to payment
-                    </button>
-                </form>
+
+                    <form method="POST" action="{{ route('wallet.add-money.store') }}" class="mt-5 space-y-5" id="add-money-form">
+                        @csrf
+                        <div>
+                            <label for="input_currency" class="block text-sm font-medium text-zinc-600">Amount currency</label>
+                            <select id="input_currency" name="input_currency" class="mt-2 w-full rounded-md border border-zinc-300 bg-zinc-50 px-3 py-3 text-base text-black outline-none focus:border-emerald-400 sm:py-2 sm:text-sm">
+                                <option value="MWK" @selected(old('input_currency', 'MWK') === 'MWK')>Malawian Kwacha (MWK)</option>
+                                <option value="USD" @selected(old('input_currency') === 'USD')>US Dollar (USD)</option>
+                            </select>
+                        </div>
+
+                        <div>
+                            <label for="amount" class="block text-sm font-medium text-zinc-600">Amount</label>
+                            <input id="amount" name="amount" type="number" inputmode="decimal" step="0.01" min="0.01" required
+                                value="{{ old('amount') }}"
+                                class="mt-2 w-full rounded-md border border-zinc-300 bg-zinc-50 px-3 py-4 text-2xl font-semibold text-black outline-none focus:border-emerald-400"
+                                placeholder="0.00">
+                        </div>
+
+                        <div class="rounded-lg border border-zinc-200 bg-zinc-50 p-4">
+                            <p class="text-sm text-zinc-500">Approximate equivalent</p>
+                            <p id="equivalent-line" class="mt-1 text-lg font-semibold text-black">Enter an amount to see the conversion.</p>
+                            <p class="mt-3 text-xs leading-5 text-zinc-500">
+                                Checkout amount: <span class="text-zinc-600" id="pay-mwk-line">—</span> MWK
+                            </p>
+                        </div>
+
+                        <p class="text-xs leading-5 text-zinc-500">Minimum charge: {{ number_format($minMwkMinor / 100, 2) }} MWK · Maximum: {{ number_format($maxMwkMinor / 100, 2) }} MWK.</p>
+
+                        <button type="submit" class="w-full rounded-md bg-emerald-400 px-4 py-3 text-sm font-semibold text-zinc-950 hover:bg-emerald-300">
+                            Continue to payment
+                        </button>
+                    </form>
+                </section>
             </section>
         </main>
         <script>
@@ -110,8 +132,7 @@
                     let mwkTotal;
                     if (cur === 'MWK') {
                         mwkTotal = raw;
-                        const usdEq = raw / mwkPerUsd;
-                        equivalentLine.textContent = '≈ ' + fmt(usdEq, 2) + ' USD';
+                        equivalentLine.textContent = '≈ ' + fmt(raw / mwkPerUsd, 2) + ' USD';
                     } else {
                         mwkTotal = raw * mwkPerUsd;
                         equivalentLine.textContent = '≈ ' + fmt(mwkTotal, 2) + ' MWK';
@@ -145,5 +166,6 @@
                 recalc();
             })();
         </script>
+        @include('partials.mobile-nav')
     </body>
 </html>

@@ -53,6 +53,11 @@ class User extends Authenticatable
         return $this->hasMany(VirtualCard::class);
     }
 
+    public function cardProviderProfiles(): HasMany
+    {
+        return $this->hasMany(CardProviderProfile::class);
+    }
+
     public function kycProfile(): HasOne
     {
         return $this->hasOne(KycProfile::class);
