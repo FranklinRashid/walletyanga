@@ -35,6 +35,15 @@ class AuthenticatedSessionController extends Controller
 
         /** @var User $user */
         $user = Auth::user();
+
+        if ($user->status !== 'active') {
+            Auth::guard('web')->logout();
+
+            throw ValidationException::withMessages([
+                'email' => 'Your account is suspended. Contact support.',
+            ]);
+        }
+
         $fallback = $user->isStaff()
             ? route('admin.dashboard')
             : route('wallet.dashboard');

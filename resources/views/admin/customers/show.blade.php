@@ -51,6 +51,27 @@
                                 <p class="mt-1 font-semibold text-black">{{ $customer->profile?->country ?? '—' }}</p>
                             </div>
                         </div>
+                        @if ($canManageCustomers)
+                            <div class="mt-5 border-t border-zinc-100 pt-4">
+                                @if ($customer->status === 'active')
+                                    <form method="POST" action="{{ route('admin.customers.suspend', $customer) }}" class="space-y-3">
+                                        @csrf
+                                        <label for="customer_suspend_reason" class="wy-label">Suspension reason</label>
+                                        <textarea id="customer_suspend_reason" name="reason" rows="2" required class="wy-field text-sm" placeholder="Why should this customer account be suspended?">{{ old('reason') }}</textarea>
+                                        <button type="submit" class="wy-button border border-red-200 bg-red-50 text-red-700 hover:border-red-300">
+                                            Suspend account
+                                        </button>
+                                    </form>
+                                @else
+                                    <form method="POST" action="{{ route('admin.customers.activate', $customer) }}">
+                                        @csrf
+                                        <button type="submit" class="wy-button wy-button-primary">
+                                            Activate account
+                                        </button>
+                                    </form>
+                                @endif
+                            </div>
+                        @endif
                         @if ($customer->kycProfile)
                             <div class="mt-5 border-t border-zinc-100 pt-4">
                                 <div class="flex flex-wrap items-center justify-between gap-3">

@@ -27,20 +27,34 @@ Route::middleware('guest')->group(function (): void {
     Route::post('/login', [AuthenticatedSessionController::class, 'store']);
 });
 
-Route::middleware('auth')->group(function (): void {
+Route::middleware(['auth', 'active'])->group(function (): void {
     Route::get('/dashboard', WalletDashboardController::class)->name('wallet.dashboard');
     Route::get('/wallet/activity', WalletActivityController::class)->name('wallet.activity');
     Route::get('/wallet/add-money', [AddMoneyController::class, 'create'])->name('wallet.add-money');
-    Route::post('/wallet/add-money', [AddMoneyController::class, 'store'])->name('wallet.add-money.store');
+    Route::post('/wallet/add-money', [AddMoneyController::class, 'store'])
+        ->middleware('throttle:20,1')
+        ->name('wallet.add-money.store');
     Route::get('/wallet/convert', [WalletConversionController::class, 'create'])->name('wallet.convert');
-    Route::post('/wallet/convert/quote', [WalletConversionController::class, 'quote'])->name('wallet.convert.quote');
-    Route::post('/wallet/convert/quotes/{quote}/accept', [WalletConversionController::class, 'accept'])->name('wallet.convert.accept');
+    Route::post('/wallet/convert/quote', [WalletConversionController::class, 'quote'])
+        ->middleware('throttle:20,1')
+        ->name('wallet.convert.quote');
+    Route::post('/wallet/convert/quotes/{quote}/accept', [WalletConversionController::class, 'accept'])
+        ->middleware('throttle:20,1')
+        ->name('wallet.convert.accept');
     Route::get('/wallet/cards', [VirtualCardController::class, 'index'])->name('wallet.cards');
     Route::post('/wallet/cards', [VirtualCardController::class, 'store'])->name('wallet.cards.store');
-    Route::post('/wallet/cards/{virtualCard}/reveal', [VirtualCardController::class, 'reveal'])->name('wallet.cards.reveal');
-    Route::post('/wallet/cards/{virtualCard}/top-up', [VirtualCardController::class, 'topUp'])->name('wallet.cards.top-up');
-    Route::post('/wallet/cards/{virtualCard}/freeze', [VirtualCardController::class, 'freeze'])->name('wallet.cards.freeze');
-    Route::post('/wallet/cards/{virtualCard}/unfreeze', [VirtualCardController::class, 'unfreeze'])->name('wallet.cards.unfreeze');
+    Route::post('/wallet/cards/{virtualCard}/reveal', [VirtualCardController::class, 'reveal'])
+        ->middleware('throttle:6,1')
+        ->name('wallet.cards.reveal');
+    Route::post('/wallet/cards/{virtualCard}/top-up', [VirtualCardController::class, 'topUp'])
+        ->middleware('throttle:20,1')
+        ->name('wallet.cards.top-up');
+    Route::post('/wallet/cards/{virtualCard}/freeze', [VirtualCardController::class, 'freeze'])
+        ->middleware('throttle:20,1')
+        ->name('wallet.cards.freeze');
+    Route::post('/wallet/cards/{virtualCard}/unfreeze', [VirtualCardController::class, 'unfreeze'])
+        ->middleware('throttle:20,1')
+        ->name('wallet.cards.unfreeze');
     Route::get('/api/fx/usd-mwk', FxSpotRateController::class)
         ->middleware('throttle:120,1')
         ->name('api.fx.usd-mwk');
@@ -49,18 +63,27 @@ Route::middleware('auth')->group(function (): void {
     Route::post('/logout', [AuthenticatedSessionController::class, 'destroy'])->name('logout');
 });
 
-Route::middleware(['auth', 'role:super_admin,compliance_officer,operations_admin,finance_admin,support_agent,auditor'])
+Route::middleware(['auth', 'active', 'role:super_admin,compliance_officer,operations_admin,finance_admin,support_agent,auditor'])
     ->prefix('admin')
     ->name('admin.')
     ->group(function (): void {
         Route::get('/', AdminDashboardController::class)->name('dashboard');
         Route::get('/customers', [CustomerController::class, 'index'])->name('customers.index');
         Route::get('/customers/{customer}', [CustomerController::class, 'show'])->name('customers.show');
+        Route::post('/customers/{customer}/suspend', [CustomerController::class, 'suspend'])
+            ->middleware('throttle:20,1')
+            ->name('customers.suspend');
+        Route::post('/customers/{customer}/activate', [CustomerController::class, 'activate'])
+            ->middleware('throttle:20,1')
+            ->name('customers.activate');
         Route::post('/customers/{customer}/kyc/revoke', [CustomerController::class, 'revokeKyc'])
+            ->middleware('throttle:20,1')
             ->name('customers.kyc.revoke');
         Route::post('/customers/{customer}/cards/{card}/freeze', [CustomerController::class, 'freezeCard'])
+            ->middleware('throttle:20,1')
             ->name('customers.cards.freeze');
         Route::post('/customers/{customer}/cards/{card}/unfreeze', [CustomerController::class, 'unfreezeCard'])
+            ->middleware('throttle:20,1')
             ->name('customers.cards.unfreeze');
 
         Route::get('/kyc', [KycQueueController::class, 'index'])->name('kyc.index');
@@ -82,4 +105,6 @@ Route::get('/payments/paychangu/callback', PaychanguCallbackController::class)->
 Route::get('/webhooks/paychangu', function (Request $request) {
     return redirect()->route('paychangu.callback', $request->query());
 });
-Route::post('/webhooks/paychangu', PaychanguWebhookController::class)->name('webhooks.paychangu');
+Route::post('/webhooks/paychangu', PaychanguWebhookController::class)
+    ->middleware('throttle:60,1')
+    ->name('webhooks.paychangu');
