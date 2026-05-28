@@ -7,34 +7,34 @@
         @vite(['resources/css/app.css', 'resources/js/app.js'])
     </head>
     <body class="bg-[#f4f5f7] text-zinc-950 antialiased">
-        <main class="mx-auto flex min-h-screen w-full max-w-7xl flex-col gap-8 px-6 py-8">
-            <nav class="flex flex-wrap items-center justify-between gap-4 border-b border-zinc-200 pb-5">
+        <main class="wy-shell wy-shell-wide flex flex-col gap-8">
+            <nav class="wy-topbar flex-wrap">
                 <div>
                     <p class="text-sm font-semibold text-black">Wallet Yanga Admin</p>
                     <p class="text-sm text-zinc-500">KYC queue · {{ str_replace('_', ' ', auth()->user()->role) }}</p>
                 </div>
                 <div class="flex flex-wrap items-center gap-3">
-                    <a href="{{ route('admin.dashboard') }}" class="rounded-md border border-zinc-300 px-3 py-2 text-sm font-medium text-zinc-700 hover:border-zinc-400">Dashboard</a>
+                    <a href="{{ route('admin.dashboard') }}" class="wy-button wy-button-secondary">Dashboard</a>
                     @if (auth()->user()->role === 'super_admin')
-                        <a href="{{ route('admin.staff.index') }}" class="rounded-md border border-zinc-300 px-3 py-2 text-sm font-medium text-zinc-700 hover:border-zinc-400">Staff</a>
+                        <a href="{{ route('admin.staff.index') }}" class="wy-button wy-button-secondary">Staff</a>
                     @endif
                     <form method="POST" action="{{ route('logout') }}">
                         @csrf
-                        <button type="submit" class="rounded-md border border-zinc-300 px-3 py-2 text-sm font-medium text-zinc-700 hover:border-zinc-400">Logout</button>
+                        <button type="submit" class="wy-button wy-button-secondary">Logout</button>
                     </form>
                 </div>
             </nav>
 
             @if (session('status'))
-                <p class="rounded-md border border-emerald-800 bg-emerald-950/50 px-4 py-3 text-sm text-emerald-200">{{ session('status') }}</p>
+                <p class="wy-alert wy-alert-success">{{ session('status') }}</p>
             @endif
 
             <section>
-                <h1 class="text-3xl font-semibold tracking-tight text-black">Pending KYC reviews</h1>
+                <h1 class="wy-page-title">Pending KYC reviews</h1>
                 <p class="mt-2 text-sm text-zinc-500">Customers who submitted details and ID documents for compliance.</p>
             </section>
 
-            <section class="rounded-lg border border-zinc-200 bg-white">
+            <section class="wy-table-card">
                 <div class="overflow-x-auto">
                     <table class="w-full text-left text-sm">
                         <thead class="text-xs uppercase text-zinc-500">
@@ -45,14 +45,14 @@
                                 <th class="px-4 py-3"></th>
                             </tr>
                         </thead>
-                        <tbody class="divide-y divide-zinc-800">
+                        <tbody class="divide-y divide-zinc-200">
                             @forelse ($pendingProfiles as $profile)
                                 <tr>
                                     <td class="px-4 py-3 font-medium text-black">{{ $profile->user?->name ?? '—' }}</td>
                                     <td class="px-4 py-3 text-zinc-600">{{ $profile->user?->email ?? '—' }}</td>
                                     <td class="px-4 py-3 text-zinc-500">{{ optional($profile->submitted_at)->diffForHumans() }}</td>
                                     <td class="px-4 py-3 text-right">
-                                        <a href="{{ route('admin.kyc.show', $profile) }}" class="rounded-md bg-emerald-600 px-3 py-1.5 text-xs font-semibold text-black hover:bg-emerald-500">Review</a>
+                                        <a href="{{ route('admin.kyc.show', $profile) }}" class="wy-button wy-button-primary px-3 py-1.5 text-xs">Review</a>
                                     </td>
                                 </tr>
                             @empty

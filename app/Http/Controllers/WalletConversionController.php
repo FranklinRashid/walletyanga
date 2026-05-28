@@ -31,12 +31,6 @@ class WalletConversionController extends Controller
             'mwkWallet' => $mwkWallet,
             'usdWallet' => $usdWallet,
             'spot' => $fx->getMwkPerUsd(),
-            'activeQuote' => FxQuote::query()
-                ->where('user_id', $user->id)
-                ->where('status', 'quoted')
-                ->where('expires_at', '>', now())
-                ->latest()
-                ->first(),
             'recentConversions' => FxConversion::query()
                 ->where('user_id', $user->id)
                 ->with('quote')
@@ -82,9 +76,13 @@ class WalletConversionController extends Controller
             ->where('status', 'quoted')
             ->update(['status' => 'cancelled']);
 
-        $fx->quoteMwkToUsd($user, $amountMinor);
+        try {
+            $fx->convertMwkToUsd($user, $amountMinor);
+        } catch (\InvalidArgumentException $e) {
+            return redirect()->route('wallet.convert')->with('status', $e->getMessage());
+        }
 
-        return redirect()->route('wallet.convert')->with('status', 'FX quote generated. Confirm before it expires.');
+        return redirect()->route('wallet.convert')->with('status', 'MWK converted to USD.');
     }
 
     public function accept(Request $request, FxQuote $quote, FxConversionService $fx): RedirectResponse

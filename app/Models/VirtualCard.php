@@ -35,4 +35,9 @@ class VirtualCard extends Model
     {
         return $this->hasMany(CardAuthorization::class);
     }
+
+    public function transactions(): HasMany
+    {
+        return $this->hasMany(CardTransaction::class);
+    }
 }

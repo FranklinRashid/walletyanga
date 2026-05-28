@@ -7,25 +7,25 @@
         @vite(['resources/css/app.css', 'resources/js/app.js'])
     </head>
     <body class="bg-[#f4f5f7] text-zinc-950 antialiased">
-        <main class="mx-auto flex min-h-screen w-full max-w-6xl flex-col gap-8 px-6 py-8">
-            <nav class="flex flex-wrap items-center justify-between gap-4 border-b border-zinc-200 pb-5">
+        <main class="wy-shell flex flex-col gap-8">
+            <nav class="wy-topbar flex-wrap">
                 <div>
                     <p class="text-sm font-semibold text-black">Staff Management</p>
                     <p class="text-sm text-zinc-500">Create internal users for compliance and operations.</p>
                 </div>
                 <div class="flex gap-3">
-                    <a href="{{ route('admin.dashboard') }}" class="rounded-md border border-zinc-300 px-3 py-2 text-sm font-medium text-zinc-700 hover:border-zinc-400">Admin</a>
-                    <a href="{{ route('admin.staff.create') }}" class="rounded-md bg-emerald-400 px-3 py-2 text-sm font-semibold text-zinc-950 hover:bg-emerald-300">Create Staff</a>
+                    <a href="{{ route('admin.dashboard') }}" class="wy-button wy-button-secondary">Admin</a>
+                    <a href="{{ route('admin.staff.create') }}" class="wy-button wy-button-primary">Create Staff</a>
                 </div>
             </nav>
 
             @if (session('status'))
-                <div class="rounded-lg border border-emerald-500/30 bg-emerald-500/10 px-4 py-3 text-sm text-emerald-200">
+                <div class="wy-alert wy-alert-success">
                     {{ session('status') }}
                 </div>
             @endif
 
-            <section class="rounded-lg border border-zinc-200 bg-white">
+            <section class="wy-table-card">
                 <div class="overflow-x-auto">
                     <table class="w-full text-left text-sm">
                         <thead class="text-xs uppercase text-zinc-500">
@@ -36,7 +36,7 @@
                                 <th class="px-4 py-3">Status</th>
                             </tr>
                         </thead>
-                        <tbody class="divide-y divide-zinc-800">
+                        <tbody class="divide-y divide-zinc-200">
                             @forelse ($staffUsers as $staff)
                                 <tr>
                                     <td class="px-4 py-3">{{ $staff->name }}</td>

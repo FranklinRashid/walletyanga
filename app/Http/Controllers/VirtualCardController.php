@@ -13,6 +13,7 @@ use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Str;
+use Illuminate\Validation\ValidationException;
 use Illuminate\View\View;
 use Throwable;
 
@@ -21,8 +22,7 @@ class VirtualCardController extends Controller
     public function __construct(
         private readonly WalletService $wallets,
         private readonly VirtualCardService $cards,
-    ) {
-    }
+    ) {}
 
     public function index(): View|RedirectResponse
     {
@@ -37,11 +37,20 @@ class VirtualCardController extends Controller
         $mwkWallet = $this->wallets->ensureUserWallet($user, 'MWK');
         $usdWallet = $this->wallets->ensureUserWallet($user, 'USD');
 
+        $cards = $user->virtualCards()->with('transactions')->latest()->get();
+
         return view('wallet.cards', [
             'user' => $user,
             'mwkWallet' => $mwkWallet,
             'usdWallet' => $usdWallet,
-            'cards' => $user->virtualCards()->latest()->get(),
+            'cards' => $cards,
+            'cardBalances' => $this->cardBalances($cards),
+            'recentCardTransactions' => $user->virtualCards()
+                ->with('transactions')
+                ->get()
+                ->flatMap->transactions
+                ->sortByDesc('created_at')
+                ->take(8),
             'issuer' => config('services.cards.issuer', 'sandbox'),
             'revealedCard' => null,
             'revealedDetails' => null,
@@ -72,7 +81,7 @@ class VirtualCardController extends Controller
 
         if (in_array(config('services.cards.issuer'), ['sudo', 'sudo_africa'], true) && ! $user->profile?->phone) {
             return back()
-                ->withErrors(['card' => 'Add a verified phone number before issuing a Sudo Africa virtual card.'])
+                ->withErrors(['card' => 'Add a verified phone number before issuing a virtual card.'])
                 ->withInput();
         }
 
@@ -137,16 +146,126 @@ class VirtualCardController extends Controller
 
         $mwkWallet = $this->wallets->ensureUserWallet($user, 'MWK');
         $usdWallet = $this->wallets->ensureUserWallet($user, 'USD');
+        $cards = $user->virtualCards()->with('transactions')->latest()->get();
 
         return view('wallet.cards', [
             'user' => $user,
             'mwkWallet' => $mwkWallet,
             'usdWallet' => $usdWallet,
-            'cards' => $user->virtualCards()->latest()->get(),
+            'cards' => $cards,
+            'cardBalances' => $this->cardBalances($cards),
+            'recentCardTransactions' => $user->virtualCards()
+                ->with('transactions')
+                ->get()
+                ->flatMap->transactions
+                ->sortByDesc('created_at')
+                ->take(8),
             'issuer' => config('services.cards.issuer', 'sandbox'),
             'revealedCard' => $card,
             'revealedDetails' => $details,
         ])->with('status', 'Card details are shown once. They are not saved by Wallet Yanga.');
+    }
+
+    public function freeze(Request $request, int $virtualCard): RedirectResponse
+    {
+        $user = $request->user()->loadMissing('kycProfile');
+
+        if ($user->kycProfile?->status !== KycProfileStatus::APPROVED->value) {
+            return redirect()
+                ->route('wallet.dashboard')
+                ->with('status', 'Your KYC must be approved before you can manage virtual cards.');
+        }
+
+        $card = $user->virtualCards()->whereKey($virtualCard)->firstOrFail();
+
+        try {
+            $this->cards->freeze($card);
+        } catch (Throwable $exception) {
+            Log::warning('Virtual card freeze failed.', [
+                'user_id' => $user->id,
+                'virtual_card_id' => $card->id,
+                'provider' => $card->provider,
+                'exception' => $exception::class,
+                'message' => $exception->getMessage(),
+            ]);
+
+            return back()->withErrors(['card' => $exception->getMessage()]);
+        }
+
+        return redirect()
+            ->route('wallet.cards')
+            ->with('status', 'Virtual card has been frozen.');
+    }
+
+    public function unfreeze(Request $request, int $virtualCard): RedirectResponse
+    {
+        $user = $request->user()->loadMissing('kycProfile');
+
+        if ($user->kycProfile?->status !== KycProfileStatus::APPROVED->value) {
+            return redirect()
+                ->route('wallet.dashboard')
+                ->with('status', 'Your KYC must be approved before you can manage virtual cards.');
+        }
+
+        $card = $user->virtualCards()->whereKey($virtualCard)->firstOrFail();
+
+        try {
+            $this->cards->unfreeze($card);
+        } catch (Throwable $exception) {
+            Log::warning('Virtual card unfreeze failed.', [
+                'user_id' => $user->id,
+                'virtual_card_id' => $card->id,
+                'provider' => $card->provider,
+                'exception' => $exception::class,
+                'message' => $exception->getMessage(),
+            ]);
+
+            return back()->withErrors(['card' => $exception->getMessage()]);
+        }
+
+        return redirect()
+            ->route('wallet.cards')
+            ->with('status', 'Virtual card has been reactivated.');
+    }
+
+    public function topUp(Request $request, int $virtualCard): RedirectResponse
+    {
+        $user = $request->user()->loadMissing('kycProfile');
+
+        if ($user->kycProfile?->status !== KycProfileStatus::APPROVED->value) {
+            return redirect()
+                ->route('wallet.dashboard')
+                ->with('status', 'Your KYC must be approved before you can fund virtual cards.');
+        }
+
+        $validated = $request->validate([
+            'amount' => ['required', 'numeric', 'gt:0'],
+        ]);
+
+        $amountMinor = (int) round(((float) $validated['amount']) * 100);
+        $card = $user->virtualCards()->whereKey($virtualCard)->firstOrFail();
+
+        try {
+            $this->cards->topUp($card, $amountMinor);
+        } catch (\InvalidArgumentException $exception) {
+            throw ValidationException::withMessages([
+                'amount' => $exception->getMessage(),
+            ]);
+        } catch (Throwable $exception) {
+            Log::warning('Virtual card top-up failed.', [
+                'user_id' => $user->id,
+                'virtual_card_id' => $card->id,
+                'provider' => $card->provider,
+                'exception' => $exception::class,
+                'message' => $exception->getMessage(),
+            ]);
+
+            return back()->withErrors(['card' => 'We could not fund this card. Please try again shortly.']);
+        }
+
+        return redirect()
+            ->route('wallet.cards')
+            ->with('status', 'Virtual card funded with USD '.number_format($amountMinor / 100, 2).'.');
     }
 
     private function recordRevealEvent(Request $request, VirtualCard $card, bool $successful): void
@@ -162,5 +281,12 @@ class VirtualCardController extends Controller
             'created_at' => now(),
             'updated_at' => now(),
         ]);
+    }
+
+    private function cardBalances($cards): array
+    {
+        return $cards
+            ->mapWithKeys(fn (VirtualCard $card): array => [$card->id => $this->cards->cardBalanceMinor($card)])
+            ->all();
     }
 }

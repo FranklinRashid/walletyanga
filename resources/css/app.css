@@ -9,3 +9,708 @@
     --font-sans: 'Instrument Sans', ui-sans-serif, system-ui, sans-serif, 'Apple Color Emoji', 'Segoe UI Emoji',
         'Segoe UI Symbol', 'Noto Color Emoji';
 }
+
+@layer components {
+    .wy-shell {
+        margin-inline: auto;
+        min-height: 100vh;
+        width: 100%;
+        max-width: 430px;
+        background: #ffffff;
+        padding: 4rem 1.5rem 6rem;
+        box-shadow: 0 25px 50px -12px rgb(212 212 216 / 0.6);
+    }
+
+    .wy-shell-wide {
+        max-width: 430px;
+    }
+
+    .wy-shell-compact {
+        max-width: 430px;
+    }
+
+    .wy-topbar {
+        display: flex;
+        align-items: flex-start;
+        justify-content: space-between;
+        gap: 1rem;
+    }
+
+    .wy-kicker {
+        font-size: 0.875rem;
+        font-weight: 600;
+        color: #4cd14f;
+    }
+
+    .wy-page-title {
+        margin-top: 0.25rem;
+        font-size: 1.75rem;
+        font-weight: 600;
+        line-height: 1.15;
+        letter-spacing: 0;
+        color: #000000;
+    }
+
+    .wy-hero-title {
+        font-size: 2.25rem;
+        font-weight: 600;
+        line-height: 1.08;
+        letter-spacing: 0;
+        color: #000000;
+    }
+
+    .wy-subtitle {
+        margin-top: 0.5rem;
+        color: #71717a;
+        line-height: 1.625;
+    }
+
+    .wy-panel {
+        border-radius: 1.5rem;
+        background: #f5f6f8;
+        padding: 1rem;
+    }
+
+    .wy-card {
+        border-radius: 1.25rem;
+        background: #ffffff;
+        padding: 1rem;
+        box-shadow: 0 14px 32px rgb(15 23 42 / 0.06);
+    }
+
+    .wy-field {
+        margin-top: 0.5rem;
+        width: 100%;
+        border-radius: 1rem;
+        border: 1px solid #d4d4d8;
+        background: #fafafa;
+        padding: 0.75rem 1rem;
+        color: #000000;
+        outline: none;
+    }
+
+    .wy-field:focus {
+        border-color: #4cd14f;
+        box-shadow: 0 0 0 3px rgb(76 209 79 / 0.14);
+    }
+
+    .wy-label {
+        font-size: 0.875rem;
+        font-weight: 500;
+        color: #52525b;
+    }
+
+    .wy-button {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        border-radius: 9999px;
+        padding: 0.75rem 1rem;
+        font-size: 0.875rem;
+        font-weight: 600;
+        transition: border-color 150ms ease, background-color 150ms ease, transform 150ms ease;
+    }
+
+    .wy-button:hover {
+        transform: translateY(-1px);
+    }
+
+    .wy-button-primary {
+        background: #4cd14f;
+        color: #09090b;
+        box-shadow: 0 10px 22px rgb(76 209 79 / 0.22);
+    }
+
+    .wy-button-primary:hover {
+        background: #44c247;
+    }
+
+    .wy-button-secondary {
+        border: 1px solid #d4d4d8;
+        background: #ffffff;
+        color: #3f3f46;
+    }
+
+    .wy-button-secondary:hover {
+        border-color: #a1a1aa;
+    }
+
+    .wy-chip {
+        display: inline-flex;
+        align-items: center;
+        border-radius: 9999px;
+        border: 1px solid #d4d4d8;
+        background: #ffffff;
+        padding: 0.375rem 0.75rem;
+        font-size: 0.75rem;
+        font-weight: 500;
+        color: #52525b;
+    }
+
+    .wy-alert {
+        border-radius: 1.25rem;
+        border: 1px solid #d4d4d8;
+        padding: 0.75rem 1rem;
+        font-size: 0.875rem;
+    }
+
+    .wy-alert-success {
+        border-color: #bbf7d0;
+        background: #f0fdf4;
+        color: #15803d;
+    }
+
+    .wy-alert-warning {
+        border-color: #fde68a;
+        background: #fffbeb;
+        color: #b45309;
+    }
+
+    .wy-alert-danger {
+        border-color: #fecaca;
+        background: #fef2f2;
+        color: #b91c1c;
+    }
+
+    .wy-table-card {
+        overflow: hidden;
+        border-radius: 1.5rem;
+        background: #ffffff;
+        box-shadow: 0 14px 32px rgb(15 23 42 / 0.06);
+    }
+
+    .wy-table-card tbody {
+        border-color: #e4e4e7;
+    }
+
+    @media (min-width: 640px) {
+        .wy-shell {
+            padding-inline: 1.75rem;
+        }
+
+        .wy-page-title {
+            font-size: 2rem;
+        }
+
+        .wy-hero-title {
+            font-size: 3rem;
+        }
+
+        .wy-panel,
+        .wy-card {
+            padding: 1.25rem;
+        }
+    }
+
+    @media (min-width: 1024px) {
+        .wy-shell {
+            margin-block: 2rem;
+            max-width: 72rem;
+            border-radius: 2rem;
+            padding: 4rem 2.5rem 3rem;
+        }
+
+        .wy-shell-wide {
+            max-width: 80rem;
+        }
+
+        .wy-shell-compact {
+            max-width: 64rem;
+        }
+
+        .wy-panel {
+            border-radius: 2rem;
+            padding: 1.75rem;
+        }
+    }
+
+    .wy-add-money-panel {
+        border-radius: 1.5rem;
+        background: #ffffff;
+        padding: 1rem;
+    }
+
+    .wy-wallet-card {
+        display: flex;
+        align-items: center;
+        gap: 0.8rem;
+        border: 1px solid #e4e4e7;
+        border-radius: 1.25rem;
+        background: #ffffff;
+        padding: 0.9rem;
+        box-shadow: 0 12px 28px rgb(15 23 42 / 0.05);
+    }
+
+    .wy-wallet-orb {
+        flex: 0 0 auto;
+        width: 2.7rem;
+        height: 2.7rem;
+        border-radius: 9999px;
+        background: linear-gradient(135deg, #ff9a62 0%, #ffe66d 58%, #4cd14f 100%);
+    }
+
+    .wy-wallet-orb-malawi {
+        border: 1px solid rgb(24 24 27 / 0.1);
+        background:
+            url('/images/malawi-flag.png')
+            center / cover no-repeat;
+    }
+
+    .wy-wallet-name {
+        font-weight: 700;
+        color: #18181b;
+    }
+
+    .wy-wallet-subtitle {
+        margin-top: 0.12rem;
+        font-size: 0.82rem;
+        color: #71717a;
+    }
+
+    .wy-wallet-code {
+        margin-left: auto;
+        font-weight: 700;
+        color: #18181b;
+    }
+
+    .wy-amount-stage {
+        text-align: center;
+    }
+
+    .wy-amount-label {
+        display: block;
+        font-weight: 700;
+        color: #18181b;
+    }
+
+    .wy-amount-input-row {
+        --wy-amount-input-width: min(15rem, calc(100% - 5.8rem));
+        --wy-amount-font-size: 3rem;
+        position: relative;
+        display: block;
+        margin-top: 0.75rem;
+        width: 100%;
+    }
+
+    .wy-currency-symbol {
+        position: absolute;
+        top: 50%;
+        left: calc((100% - var(--wy-amount-input-width)) / 2 - 2.35rem);
+        transform: translateY(-50%);
+        color: #8b949e;
+        font-size: 2.75rem;
+        font-weight: 700;
+        line-height: 1;
+    }
+
+    .wy-currency-symbol-long {
+        left: calc((100% - var(--wy-amount-input-width)) / 2 - 3.35rem);
+        font-size: 1.25rem;
+    }
+
+    .wy-amount-input {
+        display: block;
+        min-width: 0;
+        width: var(--wy-amount-input-width);
+        margin-inline: auto;
+        border: 0;
+        background: transparent;
+        color: #000000;
+        font-size: var(--wy-amount-font-size);
+        font-weight: 800;
+        line-height: 1;
+        outline: none;
+        text-align: center;
+    }
+
+    .wy-amount-input::placeholder {
+        color: #a1a1aa;
+        opacity: 1;
+    }
+
+    .wy-amount-input::-webkit-outer-spin-button,
+    .wy-amount-input::-webkit-inner-spin-button {
+        margin: 0;
+        appearance: none;
+    }
+
+    .wy-mwk-preview {
+        margin-top: 0.6rem;
+        font-size: 0.9rem;
+        font-weight: 600;
+        color: #71717a;
+    }
+
+    .wy-currency-switch {
+        display: inline-flex;
+        align-items: center;
+        gap: 0.45rem;
+        margin-top: 0.8rem;
+        border-radius: 9999px;
+        border: 1px solid #d4d4d8;
+        background: #ffffff;
+        padding: 0.42rem 0.75rem;
+        color: #18181b;
+        font-size: 0.76rem;
+        font-weight: 800;
+        box-shadow: 0 8px 18px rgb(15 23 42 / 0.05);
+    }
+
+    .wy-currency-switch:hover {
+        border-color: #a1a1aa;
+    }
+
+    .wy-money-detail {
+        display: flex;
+        align-items: center;
+        gap: 0.65rem;
+        color: #18181b;
+        font-size: 0.9rem;
+        font-weight: 700;
+    }
+
+    .wy-money-detail > span:first-child,
+    .wy-money-detail-muted {
+        color: #71717a;
+        font-weight: 500;
+    }
+
+    .wy-money-detail-fill {
+        min-width: 1.5rem;
+        flex: 1 1 auto;
+        border-bottom: 1px dashed #d4d4d8;
+        transform: translateY(0.12rem);
+    }
+
+    .wy-rate-label {
+        display: inline-flex;
+        align-items: center;
+        gap: 0.35rem;
+    }
+
+    .wy-rate-info {
+        display: inline-flex;
+        width: 1rem;
+        height: 1rem;
+        align-items: center;
+        justify-content: center;
+        border-radius: 9999px;
+        border: 1px solid #d4d4d8;
+        color: #71717a;
+        font-size: 0.68rem;
+        font-weight: 800;
+        line-height: 1;
+        cursor: help;
+    }
+
+    .wy-rate-meta {
+        margin-top: -0.55rem;
+        color: #71717a;
+        font-size: 0.74rem;
+        line-height: 1.35;
+        text-align: center;
+    }
+
+    .wy-rate-refresh {
+        align-self: center;
+        border: 0;
+        background: transparent;
+        color: #71717a;
+        font-size: 0.76rem;
+        font-weight: 700;
+        text-decoration: underline;
+        text-underline-offset: 0.18rem;
+    }
+
+    .wy-wallet-orb-usd {
+        background: linear-gradient(135deg, #111827 0%, #6b7280 55%, #e5e7eb 100%);
+    }
+
+    .wy-convert-wallets {
+        display: grid;
+        gap: 0.45rem;
+    }
+
+    .wy-currency-code {
+        font-size: 1.15rem;
+        letter-spacing: 0;
+    }
+
+    .wy-convert-amount-input {
+        width: min(14rem, 66%);
+    }
+
+    .wy-convert-quote {
+        margin-top: 1.25rem;
+    }
+
+    .wy-convert-section-title {
+        font-size: 0.95rem;
+        font-weight: 800;
+        color: #18181b;
+    }
+
+    .wy-convert-quote-card {
+        border-radius: 1rem;
+        background: #f5f6f8;
+        padding: 0.9rem;
+    }
+
+    .wy-convert-expiry,
+    .wy-convert-empty {
+        font-size: 0.78rem;
+        line-height: 1.35;
+        color: #71717a;
+    }
+
+    .wy-convert-confirm {
+        background: #000000;
+        color: #ffffff;
+    }
+
+    .wy-convert-secondary-action {
+        border: 1px solid #d4d4d8;
+        background: #ffffff;
+        color: #18181b;
+        box-shadow: none;
+    }
+
+    .wy-convert-secondary-action:hover {
+        background: #ffffff;
+        border-color: #a1a1aa;
+    }
+
+    .wy-convert-history {
+        border-radius: 1.25rem;
+        background: #ffffff;
+        padding: 1rem;
+    }
+
+    @media (max-width: 639px) {
+        .wy-add-money-page [data-mobile-nav],
+        .wy-convert-page [data-mobile-nav] {
+            display: none;
+        }
+
+        .wy-add-money-page,
+        .wy-convert-page {
+            overflow-x: hidden;
+            background: #ffffff;
+        }
+
+        .wy-add-money-shell,
+        .wy-convert-shell {
+            display: flex;
+            min-height: 100svh;
+            flex-direction: column;
+            padding: 1.15rem 1.1rem 5.5rem;
+            box-shadow: none;
+        }
+
+        .wy-add-money-topbar,
+        .wy-convert-topbar {
+            flex: 0 0 auto;
+            position: relative;
+            align-items: center;
+            justify-content: space-between;
+        }
+
+        .wy-add-money-topbar .wy-page-title,
+        .wy-convert-topbar .wy-page-title {
+            margin-top: 0;
+            font-size: 1.22rem;
+            line-height: 1;
+            font-weight: 800;
+            text-align: center;
+        }
+
+        .wy-add-money-back,
+        .wy-add-money-nav-spacer {
+            display: inline-flex;
+            width: 2.35rem;
+            height: 2.35rem;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .wy-add-money-back {
+            border-radius: 9999px;
+            color: #09090b;
+            font-size: 1.5rem;
+            font-weight: 700;
+            line-height: 1;
+        }
+
+        .wy-add-money-alerts {
+            flex: 0 0 auto;
+            margin-top: 0.45rem;
+        }
+
+        .wy-add-money-alerts:empty {
+            display: none;
+        }
+
+        .wy-add-money-layout,
+        .wy-convert-layout {
+            display: flex;
+            flex: 0 0 auto;
+            flex-direction: column;
+            gap: 0;
+            margin-top: 1.8rem;
+        }
+
+        .wy-add-money-panel,
+        .wy-convert-panel {
+            display: flex;
+            flex: 0 0 auto;
+            flex-direction: column;
+            padding: 0;
+        }
+
+        .wy-add-money-form,
+        .wy-convert-form {
+            display: flex;
+            flex: 0 0 auto;
+            flex-direction: column;
+            gap: 0.85rem;
+            margin-top: 2.3rem;
+        }
+
+        .wy-add-money-form > * + *,
+        .wy-convert-form > * + * {
+            margin-top: 0;
+        }
+
+        .wy-wallet-card {
+            padding: 0.95rem;
+        }
+
+        .wy-amount-stage {
+            margin-top: 0.4rem;
+        }
+
+        .wy-amount-input-row {
+            --wy-amount-input-width: min(14rem, calc(100% - 5.8rem));
+            margin-top: 1rem;
+        }
+
+        .wy-currency-symbol {
+            font-size: 2.6rem;
+        }
+
+        .wy-currency-symbol-long {
+            left: calc((100% - var(--wy-amount-input-width)) / 2 - 3.15rem);
+            font-size: 1.1rem;
+        }
+
+        .wy-amount-input {
+            font-size: var(--wy-amount-font-size);
+        }
+
+        .wy-money-detail {
+            font-size: 0.82rem;
+        }
+
+        .wy-rate-refresh {
+            margin-top: -0.25rem;
+        }
+
+        .wy-add-money-submit {
+            position: fixed;
+            right: 1.1rem;
+            bottom: max(1rem, env(safe-area-inset-bottom));
+            left: 1.1rem;
+            z-index: 30;
+            width: auto;
+            border-radius: 1rem;
+            background: #000000;
+            color: #ffffff;
+            padding: 1rem;
+            font-size: 1rem;
+            box-shadow: 0 16px 28px rgb(0 0 0 / 0.22);
+        }
+
+        .wy-add-money-submit:hover {
+            background: #000000;
+        }
+
+        .wy-convert-shell {
+            padding-bottom: 5.65rem;
+        }
+
+        .wy-convert-layout {
+            margin-top: 1.15rem;
+        }
+
+        .wy-convert-wallets {
+            gap: 0.35rem;
+        }
+
+        .wy-convert-wallet {
+            padding: 0.78rem 0.9rem;
+        }
+
+        .wy-convert-wallet .wy-wallet-orb {
+            width: 2.35rem;
+            height: 2.35rem;
+        }
+
+        .wy-convert-wallet .wy-wallet-name {
+            font-size: 0.92rem;
+        }
+
+        .wy-convert-wallet .wy-wallet-subtitle,
+        .wy-convert-wallet .wy-wallet-code {
+            font-size: 0.72rem;
+        }
+
+        .wy-convert-form {
+            margin-top: 1.4rem;
+        }
+
+        .wy-currency-code {
+            font-size: 0.92rem;
+        }
+
+        .wy-convert-amount-input {
+            width: min(11rem, 62%);
+            font-size: 2.75rem;
+        }
+
+        .wy-convert-quote {
+            margin-top: 1rem;
+        }
+
+        .wy-convert-empty {
+            margin-top: 0.8rem;
+            text-align: center;
+        }
+
+        .wy-convert-history {
+            margin-bottom: 0.5rem;
+            padding: 0.9rem;
+        }
+
+        .wy-convert-history .flex {
+            align-items: flex-start;
+        }
+
+        .wy-convert-submit {
+            position: fixed;
+            right: 1.1rem;
+            bottom: max(1rem, env(safe-area-inset-bottom));
+            left: 1.1rem;
+            z-index: 30;
+            border-radius: 1rem;
+            background: #000000;
+            color: #ffffff;
+            padding: 1rem;
+            font-size: 1rem;
+            box-shadow: 0 16px 28px rgb(0 0 0 / 0.22);
+        }
+
+        .wy-convert-submit:hover {
+            background: #000000;
+        }
+    }
+}

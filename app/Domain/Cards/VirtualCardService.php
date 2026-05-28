@@ -8,6 +8,8 @@ use App\Models\CardAuthorization;
 use App\Models\CardTransaction;
 use App\Models\User;
 use App\Models\VirtualCard;
+use App\Models\Wallet;
+use Illuminate\Support\Str;
 use InvalidArgumentException;
 
 class VirtualCardService
@@ -16,8 +18,7 @@ class VirtualCardService
         private readonly CardIssuerProvider $issuer,
         private readonly WalletService $wallets,
         private readonly LedgerService $ledger,
-    ) {
-    }
+    ) {}
 
     public function createCard(User $user, ?string $nickname = null): VirtualCard
     {
@@ -54,25 +55,108 @@ class VirtualCardService
         return $this->issuer->revealDetails($card);
     }
 
+    public function freeze(VirtualCard $card): VirtualCard
+    {
+        if ($card->status !== 'active') {
+            throw new InvalidArgumentException('Only active cards can be frozen.');
+        }
+
+        $this->issuer->freeze($card);
+
+        $card->forceFill(['status' => 'inactive'])->save();
+
+        return $card;
+    }
+
+    public function unfreeze(VirtualCard $card): VirtualCard
+    {
+        if ($card->status !== 'inactive') {
+            throw new InvalidArgumentException('Only frozen cards can be unfrozen.');
+        }
+
+        $this->issuer->unfreeze($card);
+
+        $card->forceFill(['status' => 'active'])->save();
+
+        return $card;
+    }
+
+    public function topUp(VirtualCard $card, int $amountMinor): CardTransaction
+    {
+        if ($card->status !== 'active') {
+            throw new InvalidArgumentException('Only active cards can be funded.');
+        }
+
+        if ($amountMinor <= 0) {
+            throw new InvalidArgumentException('Top-up amount must be greater than zero.');
+        }
+
+        $this->wallets->ensureUserWallet($card->user, 'USD');
+        $this->ensureCardWallet($card);
+
+        $mainAccount = $card->user->ledgerAccounts()
+            ->where('code', "USER:{$card->user_id}:USD:main")
+            ->firstOrFail();
+
+        if ($this->ledger->accountBalanceMinor($mainAccount) < $amountMinor) {
+            throw new InvalidArgumentException('Insufficient USD wallet balance.');
+        }
+
+        $providerTransactionId = 'card_topup_'.Str::lower(Str::random(24));
+
+        $transaction = $this->ledger->post('card_top_up', $providerTransactionId, [
+            [
+                'account_code' => "USER:{$card->user_id}:USD:main",
+                'direction' => 'debit',
+                'currency' => 'USD',
+                'amount_minor' => $amountMinor,
+            ],
+            [
+                'account_code' => $this->cardWalletCode($card),
+                'direction' => 'credit',
+                'currency' => 'USD',
+                'amount_minor' => $amountMinor,
+            ],
+        ], [
+            'virtual_card_id' => $card->id,
+        ]);
+
+        return CardTransaction::query()->create([
+            'virtual_card_id' => $card->id,
+            'provider_transaction_id' => $providerTransactionId,
+            'type' => 'top_up',
+            'currency' => 'USD',
+            'amount_minor' => $amountMinor,
+            'status' => 'posted',
+            'ledger_transaction_id' => $transaction->id,
+        ]);
+    }
+
+    public function cardBalanceMinor(VirtualCard $card): int
+    {
+        return $this->ledger->accountBalanceMinor($this->ensureCardWallet($card)->ledgerAccount);
+    }
+
     public function authorize(VirtualCard $card, string $providerAuthorizationId, int $amountMinor, array $metadata = []): CardAuthorization
     {
         if ($card->status !== 'active') {
             throw new InvalidArgumentException('Card is not active.');
         }
 
+        $this->ensureCardWallet($card);
         $this->wallets->ensureUserWallet($card->user, 'USD', 'card_reserved');
 
-        $usdAccount = $card->user->ledgerAccounts()
-            ->where('code', "USER:{$card->user_id}:USD:main")
+        $cardAccount = $card->user->ledgerAccounts()
+            ->where('code', $this->cardWalletCode($card))
             ->firstOrFail();
 
-        if ($this->ledger->accountBalanceMinor($usdAccount) < $amountMinor) {
-            throw new InvalidArgumentException('Insufficient USD wallet balance.');
+        if ($this->ledger->accountBalanceMinor($cardAccount) < $amountMinor) {
+            throw new InvalidArgumentException('Insufficient card balance.');
         }
 
         $transaction = $this->ledger->post('card_authorization', "card_auth:{$providerAuthorizationId}", [
             [
-                'account_code' => "USER:{$card->user_id}:USD:main",
+                'account_code' => $this->cardWalletCode($card),
                 'direction' => 'debit',
                 'currency' => 'USD',
                 'amount_minor' => $amountMinor,
@@ -131,5 +215,15 @@ class VirtualCardService
             'status' => 'posted',
             'ledger_transaction_id' => $transaction->id,
         ]);
+    }
+
+    private function ensureCardWallet(VirtualCard $card): Wallet
+    {
+        return $this->wallets->ensureUserWallet($card->user, 'USD', "card_{$card->id}");
+    }
+
+    private function cardWalletCode(VirtualCard $card): string
+    {
+        return "USER:{$card->user_id}:USD:card_{$card->id}";
     }
 }

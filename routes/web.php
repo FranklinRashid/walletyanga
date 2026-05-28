@@ -2,6 +2,7 @@
 
 use App\Http\Controllers\AddMoneyController;
 use App\Http\Controllers\Admin\AdminDashboardController;
+use App\Http\Controllers\Admin\CustomerController;
 use App\Http\Controllers\Admin\KycQueueController;
 use App\Http\Controllers\Admin\StaffUserController;
 use App\Http\Controllers\Auth\AuthenticatedSessionController;
@@ -11,6 +12,7 @@ use App\Http\Controllers\KycSubmissionController;
 use App\Http\Controllers\PaychanguCallbackController;
 use App\Http\Controllers\PaychanguWebhookController;
 use App\Http\Controllers\VirtualCardController;
+use App\Http\Controllers\WalletActivityController;
 use App\Http\Controllers\WalletConversionController;
 use App\Http\Controllers\WalletDashboardController;
 use Illuminate\Http\Request;
@@ -27,6 +29,7 @@ Route::middleware('guest')->group(function (): void {
 
 Route::middleware('auth')->group(function (): void {
     Route::get('/dashboard', WalletDashboardController::class)->name('wallet.dashboard');
+    Route::get('/wallet/activity', WalletActivityController::class)->name('wallet.activity');
     Route::get('/wallet/add-money', [AddMoneyController::class, 'create'])->name('wallet.add-money');
     Route::post('/wallet/add-money', [AddMoneyController::class, 'store'])->name('wallet.add-money.store');
     Route::get('/wallet/convert', [WalletConversionController::class, 'create'])->name('wallet.convert');
@@ -35,6 +38,9 @@ Route::middleware('auth')->group(function (): void {
     Route::get('/wallet/cards', [VirtualCardController::class, 'index'])->name('wallet.cards');
     Route::post('/wallet/cards', [VirtualCardController::class, 'store'])->name('wallet.cards.store');
     Route::post('/wallet/cards/{virtualCard}/reveal', [VirtualCardController::class, 'reveal'])->name('wallet.cards.reveal');
+    Route::post('/wallet/cards/{virtualCard}/top-up', [VirtualCardController::class, 'topUp'])->name('wallet.cards.top-up');
+    Route::post('/wallet/cards/{virtualCard}/freeze', [VirtualCardController::class, 'freeze'])->name('wallet.cards.freeze');
+    Route::post('/wallet/cards/{virtualCard}/unfreeze', [VirtualCardController::class, 'unfreeze'])->name('wallet.cards.unfreeze');
     Route::get('/api/fx/usd-mwk', FxSpotRateController::class)
         ->middleware('throttle:120,1')
         ->name('api.fx.usd-mwk');
@@ -48,6 +54,14 @@ Route::middleware(['auth', 'role:super_admin,compliance_officer,operations_admin
     ->name('admin.')
     ->group(function (): void {
         Route::get('/', AdminDashboardController::class)->name('dashboard');
+        Route::get('/customers', [CustomerController::class, 'index'])->name('customers.index');
+        Route::get('/customers/{customer}', [CustomerController::class, 'show'])->name('customers.show');
+        Route::post('/customers/{customer}/kyc/revoke', [CustomerController::class, 'revokeKyc'])
+            ->name('customers.kyc.revoke');
+        Route::post('/customers/{customer}/cards/{card}/freeze', [CustomerController::class, 'freezeCard'])
+            ->name('customers.cards.freeze');
+        Route::post('/customers/{customer}/cards/{card}/unfreeze', [CustomerController::class, 'unfreezeCard'])
+            ->name('customers.cards.unfreeze');
 
         Route::get('/kyc', [KycQueueController::class, 'index'])->name('kyc.index');
         Route::get('/kyc/{kyc_profile}', [KycQueueController::class, 'show'])->name('kyc.show');
