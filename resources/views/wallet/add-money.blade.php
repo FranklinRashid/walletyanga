@@ -6,99 +6,90 @@
         <title>Add money · Wallet Yanga</title>
         @vite(['resources/css/app.css', 'resources/js/app.js'])
     </head>
-    <body class="bg-[#f4f5f7] text-zinc-950 antialiased">
-        <main class="mx-auto min-h-screen w-full max-w-5xl px-4 pb-20 pt-16 sm:px-6 lg:px-8">
-            <nav class="flex items-center justify-between gap-3">
-                <div class="min-w-0">
-                    <a href="{{ route('wallet.dashboard') }}" class="text-sm font-semibold text-emerald-300 hover:text-emerald-200">Wallet Yanga</a>
-                    <h1 class="mt-1 text-2xl font-semibold text-black">Add money</h1>
-                </div>
-                <a href="{{ route('wallet.dashboard') }}" class="rounded-md border border-zinc-300 px-3 py-2 text-sm font-medium text-zinc-700 hover:border-zinc-400">Back</a>
+    <body class="wy-add-money-page bg-[#f4f5f7] text-zinc-950 antialiased">
+        <main class="wy-shell wy-shell-compact wy-add-money-shell">
+            <nav class="wy-topbar wy-add-money-topbar">
+                <a href="{{ route('wallet.dashboard') }}" class="wy-add-money-back" aria-label="Back to dashboard">←</a>
+                <h1 class="wy-page-title">Add money</h1>
+                <span class="wy-add-money-nav-spacer" aria-hidden="true"></span>
             </nav>
 
-            <div class="mt-5 space-y-3">
-                @if (session('status'))
-                    <div class="rounded-lg border border-amber-500/30 bg-amber-500/10 px-4 py-3 text-sm text-amber-100">
-                        {{ session('status') }}
-                    </div>
-                @endif
-
-                @if ($errors->any())
-                    <div class="rounded-lg border border-red-500/30 bg-red-500/10 px-4 py-3 text-sm text-red-100">
-                        {{ $errors->first() }}
-                    </div>
-                @endif
-            </div>
-
-            <section class="mt-5 grid gap-4 lg:grid-cols-[0.8fr_1.2fr] lg:items-start">
-                <div class="space-y-4">
-                    <section class="rounded-lg border border-zinc-200 bg-white p-4">
-                        <p class="text-xs font-semibold uppercase text-zinc-500">Payment method</p>
-                        <div class="mt-4 flex items-center gap-3">
-                            <div class="flex h-12 w-12 items-center justify-center rounded-lg bg-emerald-400 text-lg font-semibold text-zinc-950">P</div>
-                            <div>
-                                <p class="font-semibold text-black">Secure checkout</p>
-                                <p class="mt-1 text-sm text-zinc-500">Settles into your MWK wallet</p>
-                            </div>
+            @if (session('status') || $errors->any())
+                <div class="wy-add-money-alerts mt-5 space-y-3">
+                    @if (session('status'))
+                        <div class="wy-alert wy-alert-warning">
+                            {{ session('status') }}
                         </div>
-                    </section>
+                    @endif
 
-                    <section class="rounded-lg border border-zinc-200 bg-white p-4">
-                        <p class="text-xs font-semibold uppercase text-zinc-500">Reference rate</p>
-                        <p class="mt-2 text-2xl font-semibold text-black">
-                            1 USD ≈ <span id="rate-display">{{ number_format($spot['rate'], 2) }}</span> MWK
-                        </p>
-                        <p class="mt-2 text-xs leading-5 text-zinc-500" id="rate-meta-text">
+                    @if ($errors->any())
+                        <div class="wy-alert wy-alert-danger">
+                            {{ $errors->first() }}
+                        </div>
+                    @endif
+                </div>
+            @endif
+
+            <section class="wy-add-money-layout mt-5">
+                <section class="wy-add-money-panel">
+                    <div class="wy-wallet-card">
+                        <span class="wy-wallet-orb wy-wallet-orb-malawi" aria-hidden="true"></span>
+                        <div>
+                            <p class="wy-wallet-name">MWK wallet</p>
+                            <p class="wy-wallet-subtitle">Settles in Malawian Kwacha</p>
+                        </div>
+                        <span class="wy-wallet-code">MWK</span>
+                    </div>
+
+                    <form method="POST" action="{{ route('wallet.add-money.store') }}" class="wy-add-money-form mt-5 space-y-5" id="add-money-form">
+                        @csrf
+                        <input type="hidden" id="input_currency" name="input_currency" value="{{ old('input_currency', 'USD') }}">
+
+                        <div class="wy-amount-stage">
+                            <label for="amount" class="wy-amount-label">You're adding</label>
+                            <div class="wy-amount-input-row">
+                                <span class="wy-currency-symbol" id="currency-symbol">$</span>
+                                <input id="amount" name="amount" type="number" inputmode="decimal" step="0.01" min="0.01" required
+                                    value="{{ old('amount') }}"
+                                    class="wy-amount-input"
+                                    placeholder="0">
+                            </div>
+                            <p id="equivalent-line" class="wy-mwk-preview">≈ 0.00 MWK</p>
+                            <button type="button" class="wy-currency-switch" id="currency-switch" aria-label="Switch input currency">
+                                <span id="currency-switch-current">USD</span>
+                                <span aria-hidden="true">⇄</span>
+                                <span id="currency-switch-next">MWK</span>
+                            </button>
+                        </div>
+
+                        <div class="wy-money-detail">
+                            <span class="wy-rate-label">
+                                Rate
+                                <span class="wy-rate-info" tabindex="0" aria-describedby="rate-meta-text">i</span>
+                            </span>
+                            <span class="wy-money-detail-fill" aria-hidden="true"></span>
+                            <span>1 USD ≈ <span id="rate-display">{{ number_format($spot['rate'], 2) }}</span> MWK</span>
+                        </div>
+
+                        <p class="wy-rate-meta" id="rate-meta-text">
                             @if ($spot['as_of'])
                                 As of {{ $spot['as_of'] }} ·
                             @endif
-                            Source: {{ $spot['source'] === 'currency-api' ? 'live market data' : 'configured fallback' }}
+                            Wallet Yanga does not set this rate. It is sourced from {{ $spot['source'] === 'currency-api' ? 'Currency API' : 'the configured fallback rate' }}.
                         </p>
-                        <button type="button" id="refresh-rate" class="mt-4 rounded-md border border-zinc-300 px-3 py-2 text-sm font-medium text-emerald-300 hover:border-emerald-400/50 disabled:opacity-50">
+
+                        <div class="wy-money-detail wy-money-detail-muted">
+                            <span>Limit</span>
+                            <span class="wy-money-detail-fill" aria-hidden="true"></span>
+                            <span id="limit-display"></span>
+                        </div>
+
+                        <button type="button" id="refresh-rate" class="wy-rate-refresh disabled:opacity-50">
                             Refresh rate
                         </button>
-                    </section>
-                </div>
 
-                <section class="rounded-lg border border-zinc-200 bg-white p-4 sm:p-5">
-                    <div class="flex items-start justify-between gap-3">
-                        <div>
-                            <p class="text-sm font-semibold text-black">Top up wallet</p>
-                            <p class="mt-1 text-sm text-zinc-500">Choose a currency, enter amount, then continue to checkout.</p>
-                        </div>
-                        <span class="rounded-full border border-zinc-300 px-2 py-1 text-xs text-zinc-600">Step 1 of 2</span>
-                    </div>
-
-                    <form method="POST" action="{{ route('wallet.add-money.store') }}" class="mt-5 space-y-5" id="add-money-form">
-                        @csrf
-                        <div>
-                            <label for="input_currency" class="block text-sm font-medium text-zinc-600">Amount currency</label>
-                            <select id="input_currency" name="input_currency" class="mt-2 w-full rounded-md border border-zinc-300 bg-zinc-50 px-3 py-3 text-base text-black outline-none focus:border-emerald-400 sm:py-2 sm:text-sm">
-                                <option value="MWK" @selected(old('input_currency', 'MWK') === 'MWK')>Malawian Kwacha (MWK)</option>
-                                <option value="USD" @selected(old('input_currency') === 'USD')>US Dollar (USD)</option>
-                            </select>
-                        </div>
-
-                        <div>
-                            <label for="amount" class="block text-sm font-medium text-zinc-600">Amount</label>
-                            <input id="amount" name="amount" type="number" inputmode="decimal" step="0.01" min="0.01" required
-                                value="{{ old('amount') }}"
-                                class="mt-2 w-full rounded-md border border-zinc-300 bg-zinc-50 px-3 py-4 text-2xl font-semibold text-black outline-none focus:border-emerald-400"
-                                placeholder="0.00">
-                        </div>
-
-                        <div class="rounded-lg border border-zinc-200 bg-zinc-50 p-4">
-                            <p class="text-sm text-zinc-500">Approximate equivalent</p>
-                            <p id="equivalent-line" class="mt-1 text-lg font-semibold text-black">Enter an amount to see the conversion.</p>
-                            <p class="mt-3 text-xs leading-5 text-zinc-500">
-                                Checkout amount: <span class="text-zinc-600" id="pay-mwk-line">—</span> MWK
-                            </p>
-                        </div>
-
-                        <p class="text-xs leading-5 text-zinc-500">Minimum charge: {{ number_format($minMwkMinor / 100, 2) }} MWK · Maximum: {{ number_format($maxMwkMinor / 100, 2) }} MWK.</p>
-
-                        <button type="submit" class="w-full rounded-md bg-emerald-400 px-4 py-3 text-sm font-semibold text-zinc-950 hover:bg-emerald-300">
-                            Continue to payment
+                        <button type="submit" class="wy-button wy-button-primary wy-add-money-submit">
+                            Add money
                         </button>
                     </form>
                 </section>
@@ -108,36 +99,77 @@
             (function () {
                 const rateUrl = @json(route('api.fx.usd-mwk'));
                 let mwkPerUsd = {{ json_encode((float) $spot['rate']) }};
+                const limits = {
+                    minMwk: {{ json_encode($minMwkMinor / 100) }},
+                    maxMwk: {{ json_encode($maxMwkMinor / 100) }},
+                };
 
                 const inputCurrency = document.getElementById('input_currency');
                 const amountEl = document.getElementById('amount');
+                const currencySymbol = document.getElementById('currency-symbol');
+                const currencySwitch = document.getElementById('currency-switch');
+                const currencySwitchCurrent = document.getElementById('currency-switch-current');
+                const currencySwitchNext = document.getElementById('currency-switch-next');
                 const equivalentLine = document.getElementById('equivalent-line');
-                const payMwkLine = document.getElementById('pay-mwk-line');
+                const limitDisplay = document.getElementById('limit-display');
                 const rateDisplay = document.getElementById('rate-display');
                 const rateMetaText = document.getElementById('rate-meta-text');
                 const refreshBtn = document.getElementById('refresh-rate');
+                const submitBtn = document.querySelector('.wy-add-money-submit');
 
                 function fmt(n, d) {
                     return Number(n).toLocaleString(undefined, { minimumFractionDigits: d, maximumFractionDigits: d });
                 }
 
+                function formatAmount(currency, value) {
+                    return currency === 'USD' ? '$' + fmt(value, 2) : fmt(value, 2) + ' MWK';
+                }
+
+                function syncAmountSize() {
+                    const digitCount = amountEl.value.replace(/[^0-9]/g, '').length;
+                    let size = '3rem';
+
+                    if (digitCount > 10) {
+                        size = '1.85rem';
+                    } else if (digitCount > 8) {
+                        size = '2.1rem';
+                    } else if (digitCount > 6) {
+                        size = '2.45rem';
+                    } else if (digitCount > 4) {
+                        size = '2.75rem';
+                    }
+
+                    amountEl.parentElement.style.setProperty('--wy-amount-font-size', size);
+                }
+
+                function syncCurrencyUi() {
+                    const currency = inputCurrency.value === 'MWK' ? 'MWK' : 'USD';
+                    inputCurrency.value = currency;
+                    currencySymbol.textContent = currency === 'USD' ? '$' : 'MWK';
+                    currencySymbol.classList.toggle('wy-currency-symbol-long', currency === 'MWK');
+                    currencySwitchCurrent.textContent = currency;
+                    currencySwitchNext.textContent = currency === 'USD' ? 'MWK' : 'USD';
+                    amountEl.setAttribute('aria-label', currency + ' amount');
+                    limitDisplay.textContent = currency === 'USD'
+                        ? formatAmount('USD', limits.minMwk / mwkPerUsd) + '-' + formatAmount('USD', limits.maxMwk / mwkPerUsd)
+                        : formatAmount('MWK', limits.minMwk) + '-' + formatAmount('MWK', limits.maxMwk);
+                }
+
                 function recalc() {
+                    syncCurrencyUi();
+                    syncAmountSize();
                     const raw = parseFloat(amountEl.value);
                     if (!Number.isFinite(raw) || raw <= 0) {
-                        equivalentLine.textContent = 'Enter an amount to see the conversion.';
-                        payMwkLine.textContent = '—';
+                        equivalentLine.textContent = inputCurrency.value === 'USD' ? '≈ 0.00 MWK' : '≈ $0.00';
+                        submitBtn.textContent = 'Add money';
                         return;
                     }
-                    const cur = inputCurrency.value;
-                    let mwkTotal;
-                    if (cur === 'MWK') {
-                        mwkTotal = raw;
-                        equivalentLine.textContent = '≈ ' + fmt(raw / mwkPerUsd, 2) + ' USD';
+                    if (inputCurrency.value === 'USD') {
+                        equivalentLine.textContent = '≈ ' + fmt(raw * mwkPerUsd, 2) + ' MWK';
                     } else {
-                        mwkTotal = raw * mwkPerUsd;
-                        equivalentLine.textContent = '≈ ' + fmt(mwkTotal, 2) + ' MWK';
+                        equivalentLine.textContent = '≈ $' + fmt(raw / mwkPerUsd, 2);
                     }
-                    payMwkLine.textContent = fmt(mwkTotal, 2);
+                    submitBtn.textContent = 'Add ' + formatAmount(inputCurrency.value, raw);
                 }
 
                 async function refreshRate() {
@@ -150,8 +182,8 @@
                             mwkPerUsd = data.mwk_per_usd;
                             rateDisplay.textContent = fmt(mwkPerUsd, 2);
                             const asOf = data.as_of ? 'As of ' + data.as_of + ' · ' : '';
-                            const src = data.source === 'currency-api' ? 'live market data' : 'configured fallback';
-                            rateMetaText.textContent = asOf + 'Source: ' + src;
+                            const src = data.source === 'currency-api' ? 'Currency API' : 'the configured fallback rate';
+                            rateMetaText.textContent = asOf + 'Wallet Yanga does not set this rate. It is sourced from ' + src + '.';
                             recalc();
                         }
                     } catch (e) {
@@ -160,7 +192,11 @@
                     refreshBtn.disabled = false;
                 }
 
-                inputCurrency.addEventListener('change', recalc);
+                currencySwitch.addEventListener('click', function () {
+                    inputCurrency.value = inputCurrency.value === 'USD' ? 'MWK' : 'USD';
+                    recalc();
+                    amountEl.focus();
+                });
                 amountEl.addEventListener('input', recalc);
                 refreshBtn.addEventListener('click', refreshRate);
                 recalc();

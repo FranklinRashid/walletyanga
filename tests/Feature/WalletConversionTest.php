@@ -93,22 +93,57 @@ class WalletConversionTest extends TestCase
             ->assertSee('12.34', false);
     }
 
-    public function test_approved_user_can_generate_conversion_quote(): void
+    public function test_approved_user_can_convert_mwk_to_usd_directly(): void
     {
+        $this->seed(DatabaseSeeder::class);
         $this->withoutVite();
 
-        $user = $this->approvedUserWithWallets(250_000_00);
+        $user = $this->approvedUserWithWallets();
+
+        $intent = DepositIntent::query()->create([
+            'user_id' => $user->id,
+            'provider' => 'paychangu',
+            'tx_ref' => 'WY-DEP-FXDIRECT',
+            'currency' => 'MWK',
+            'amount_minor' => 200_000_00,
+            'status' => 'pending',
+        ]);
+
+        app(DepositService::class)->postVerifiedDeposit($intent, ['status' => 'success']);
 
         $this->actingAs($user)->post('/wallet/convert/quote', [
             'mwk_amount' => '200000',
-        ])->assertRedirect(route('wallet.convert'));
+        ])->assertRedirect(route('wallet.convert'))
+            ->assertSessionHas('status', 'MWK converted to USD.');
 
         $this->assertDatabaseHas('fx_quotes', [
             'user_id' => $user->id,
             'from_currency' => 'MWK',
             'to_currency' => 'USD',
             'from_amount_minor' => 200_000_00,
-            'status' => 'quoted',
+            'status' => 'accepted',
+        ]);
+
+        $quote = FxQuote::query()->where('user_id', $user->id)->firstOrFail();
+
+        $this->assertDatabaseHas('fx_conversions', [
+            'user_id' => $user->id,
+            'fx_quote_id' => $quote->id,
+            'status' => 'posted',
+        ]);
+
+        $this->assertDatabaseHas('wallets', [
+            'user_id' => $user->id,
+            'currency' => 'MWK',
+            'type' => 'main',
+            'cached_balance_minor' => 0,
+        ]);
+
+        $this->assertDatabaseHas('wallets', [
+            'user_id' => $user->id,
+            'currency' => 'USD',
+            'type' => 'main',
+            'cached_balance_minor' => $quote->to_amount_minor,
         ]);
     }
 
@@ -125,7 +160,7 @@ class WalletConversionTest extends TestCase
         $this->assertDatabaseCount('fx_quotes', 0);
     }
 
-    public function test_approved_user_can_accept_conversion_quote(): void
+    public function test_legacy_accept_conversion_quote_route_still_works(): void
     {
         $this->seed(DatabaseSeeder::class);
         $this->withoutVite();

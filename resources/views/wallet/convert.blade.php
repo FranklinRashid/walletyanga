@@ -6,126 +6,99 @@
         <title>Convert MWK to USD · Wallet Yanga</title>
         @vite(['resources/css/app.css', 'resources/js/app.js'])
     </head>
-    <body class="bg-[#f4f5f7] text-zinc-950 antialiased">
-        <main class="mx-auto min-h-screen w-full max-w-5xl px-4 pb-20 pt-16 sm:px-6 lg:px-8">
-            <nav class="flex items-center justify-between gap-3">
-                <div class="min-w-0">
-                    <a href="{{ route('wallet.dashboard') }}" class="text-sm font-semibold text-emerald-300 hover:text-emerald-200">Wallet Yanga</a>
-                    <h1 class="mt-1 text-2xl font-semibold text-black">Convert</h1>
-                </div>
-                <a href="{{ route('wallet.dashboard') }}" class="rounded-md border border-zinc-300 px-3 py-2 text-sm font-medium text-zinc-700 hover:border-zinc-400">Back</a>
+    <body class="wy-convert-page bg-[#f4f5f7] text-zinc-950 antialiased">
+        <main class="wy-shell wy-shell-compact wy-convert-shell">
+            <nav class="wy-topbar wy-convert-topbar">
+                <a href="{{ route('wallet.dashboard') }}" class="wy-add-money-back" aria-label="Back to dashboard">←</a>
+                <h1 class="wy-page-title">Convert</h1>
+                <span class="wy-add-money-nav-spacer" aria-hidden="true"></span>
             </nav>
 
-            <div class="mt-5 space-y-3">
-                @if (session('status'))
-                    <div class="rounded-lg border border-amber-500/30 bg-amber-500/10 px-4 py-3 text-sm text-amber-100">
-                        {{ session('status') }}
-                    </div>
-                @endif
-
-                @if ($errors->any())
-                    <div class="rounded-lg border border-red-500/30 bg-red-500/10 px-4 py-3 text-sm text-red-100">
-                        {{ $errors->first() }}
-                    </div>
-                @endif
-            </div>
-
-            <section class="mt-5 grid gap-4 lg:grid-cols-[0.9fr_1.1fr] lg:items-start">
-                <div class="space-y-4">
-                    <section class="rounded-lg border border-zinc-200 bg-white p-4">
-                        <p class="text-xs font-semibold uppercase text-zinc-500">Available balances</p>
-                        <div class="mt-4 grid grid-cols-2 gap-3">
-                            <div class="rounded-lg border border-zinc-200 bg-zinc-50/70 p-4">
-                                <p class="text-xs uppercase text-zinc-500">MWK Balance</p>
-                                <p class="mt-2 font-mono text-2xl font-semibold text-black">{{ number_format($mwkWallet->cached_balance_minor / 100, 2) }}</p>
-                            </div>
-                            <div class="rounded-lg border border-zinc-200 bg-zinc-50/70 p-4">
-                                <p class="text-xs uppercase text-zinc-500">USD Balance</p>
-                                <p class="mt-2 font-mono text-2xl font-semibold text-black">{{ number_format($usdWallet->cached_balance_minor / 100, 2) }}</p>
-                            </div>
+            @if (session('status') || $errors->any())
+                <div class="wy-convert-alerts mt-5 space-y-3">
+                    @if (session('status'))
+                        <div class="wy-alert wy-alert-warning">
+                            {{ session('status') }}
                         </div>
-                    </section>
+                    @endif
 
-                    <section class="rounded-lg border border-zinc-200 bg-white p-4">
-                        <p class="text-xs font-semibold uppercase text-zinc-500">Reference rate</p>
-                        <p class="mt-2 text-2xl font-semibold text-black">1 USD ≈ {{ number_format($spot['rate'], 2) }} MWK</p>
-                        <p class="mt-2 text-xs leading-5 text-zinc-500">
-                            @if ($spot['as_of'])
-                                As of {{ $spot['as_of'] }} ·
-                            @endif
-                            Source: {{ $spot['source'] === 'currency-api' ? 'live market data' : 'configured fallback' }}
-                        </p>
-                    </section>
+                    @if ($errors->any())
+                        <div class="wy-alert wy-alert-danger">
+                            {{ $errors->first() }}
+                        </div>
+                    @endif
                 </div>
+            @endif
 
-                <div class="space-y-4">
-                    <section class="rounded-lg border border-zinc-200 bg-white p-4 sm:p-5">
-                        <div class="flex items-start justify-between gap-3">
+            <section class="wy-convert-layout mt-5">
+                <section class="wy-add-money-panel wy-convert-panel">
+                    <div class="wy-convert-wallets">
+                        <div class="wy-wallet-card wy-convert-wallet">
+                            <span class="wy-wallet-orb" aria-hidden="true"></span>
                             <div>
-                                <p class="text-sm font-semibold text-black">Create FX quote</p>
-                                <p class="mt-1 text-sm text-zinc-500">Lock a MWK to USD rate for five minutes.</p>
+                                <p class="wy-wallet-name">MWK wallet</p>
+                                <span class="sr-only">MWK Balance</span>
+                                <p class="wy-wallet-subtitle">{{ number_format($mwkWallet->cached_balance_minor / 100, 2) }} available</p>
                             </div>
-                            <span class="rounded-full border border-zinc-300 px-2 py-1 text-xs text-zinc-600">MWK → USD</span>
+                            <span class="wy-wallet-code">From</span>
                         </div>
-
-                        <form method="POST" action="{{ route('wallet.convert.quote') }}" class="mt-5 space-y-4">
-                            @csrf
+                        <div class="wy-wallet-card wy-convert-wallet">
+                            <span class="wy-wallet-orb wy-wallet-orb-usd" aria-hidden="true"></span>
                             <div>
-                                <label for="mwk_amount" class="block text-sm font-medium text-zinc-600">MWK amount</label>
-                                <input id="mwk_amount" name="mwk_amount" type="number" inputmode="decimal" step="0.01" min="{{ number_format($minMwkMinor / 100, 2, '.', '') }}" required
+                                <p class="wy-wallet-name">USD wallet</p>
+                                <span class="sr-only">USD Balance</span>
+                                <p class="wy-wallet-subtitle">{{ number_format($usdWallet->cached_balance_minor / 100, 2) }} available</p>
+                            </div>
+                            <span class="wy-wallet-code">To</span>
+                        </div>
+                    </div>
+
+                    <form method="POST" action="{{ route('wallet.convert.quote') }}" class="wy-convert-form mt-5 space-y-5">
+                        @csrf
+
+                        <div class="wy-amount-stage">
+                            <label for="convert_amount" class="wy-amount-label" id="convert-amount-label">You're converting</label>
+                            <div class="wy-amount-input-row">
+                                <span class="wy-currency-symbol wy-currency-code wy-currency-symbol-long" id="convert-currency-code">MWK</span>
+                                <input id="convert_amount" name="mwk_amount" type="number" inputmode="decimal" step="0.01" min="{{ number_format($minMwkMinor / 100, 2, '.', '') }}" required
                                     value="{{ old('mwk_amount') }}"
-                                    class="mt-2 w-full rounded-md border border-zinc-300 bg-zinc-50 px-3 py-4 text-2xl font-semibold text-black outline-none focus:border-emerald-400"
-                                    placeholder="0.00">
+                                    class="wy-amount-input wy-convert-amount-input"
+                                    placeholder="0">
                             </div>
-                            <p class="text-xs text-zinc-500">Minimum conversion: {{ number_format($minMwkMinor / 100, 2) }} MWK.</p>
-                            <button type="submit" class="w-full rounded-md bg-emerald-400 px-4 py-3 text-sm font-semibold text-zinc-950 hover:bg-emerald-300">
-                                Generate quote
+                            <p id="convert-preview" class="wy-mwk-preview">≈ 0.00 USD</p>
+                            <button type="button" class="wy-currency-switch" id="convert-switch" aria-label="Switch amount entry mode">
+                                <span id="convert-switch-current">MWK</span>
+                                <span aria-hidden="true">⇄</span>
+                                <span id="convert-switch-next">USD</span>
                             </button>
-                        </form>
-                    </section>
+                        </div>
 
-                    <section class="rounded-lg border border-zinc-200 bg-white p-4 sm:p-5">
-                        <h2 class="font-semibold text-black">Current quote</h2>
-                        @if ($activeQuote)
-                            <div class="mt-4 space-y-3 text-sm">
-                                <div class="rounded-lg border border-zinc-200 bg-zinc-50/70 p-4">
-                                    <div class="flex items-center justify-between gap-4">
-                                        <span class="text-zinc-500">You convert</span>
-                                        <span class="font-semibold text-black">{{ number_format($activeQuote->from_amount_minor / 100, 2) }} MWK</span>
-                                    </div>
-                                    <div class="mt-3 flex items-center justify-between gap-4">
-                                        <span class="text-zinc-500">You receive</span>
-                                        <span class="font-semibold text-emerald-300">{{ number_format($activeQuote->to_amount_minor / 100, 2) }} USD</span>
-                                    </div>
-                                    <div class="mt-3 flex items-center justify-between gap-4">
-                                        <span class="text-zinc-500">Effective rate</span>
-                                        <span class="font-mono text-black">{{ number_format((float) $activeQuote->effective_rate, 4) }}</span>
-                                    </div>
-                                </div>
-                                <p class="rounded-lg border border-amber-500/30 bg-amber-500/10 px-3 py-2 text-xs text-amber-100">
-                                    Expires {{ $activeQuote->expires_at->diffForHumans() }} · Spread {{ $activeQuote->spread_bps }} bps
-                                </p>
-                                <form method="POST" action="{{ route('wallet.convert.accept', $activeQuote) }}">
-                                    @csrf
-                                    <button type="submit" class="w-full rounded-md bg-emerald-400 px-4 py-3 text-sm font-semibold text-zinc-950 hover:bg-emerald-300">
-                                        Confirm conversion
-                                    </button>
-                                </form>
-                            </div>
-                        @else
-                            <p class="mt-4 text-sm leading-6 text-zinc-500">No active quote. Enter a MWK amount to see the exact USD amount before confirming.</p>
-                        @endif
-                    </section>
-                </div>
+                        <div class="wy-money-detail">
+                            <span>Rate</span>
+                            <span class="wy-money-detail-fill" aria-hidden="true"></span>
+                            <span>1 USD ≈ <span id="convert-rate">{{ number_format($spot['rate'], 2) }}</span> MWK</span>
+                        </div>
+
+                        <div class="wy-money-detail wy-money-detail-muted">
+                            <span>Minimum</span>
+                            <span class="wy-money-detail-fill" aria-hidden="true"></span>
+                            <span>{{ number_format($minMwkMinor / 100, 2) }} MWK</span>
+                        </div>
+
+                        <button type="submit" class="wy-button wy-button-primary wy-convert-submit w-full">
+                            Convert MWK to dollars
+                        </button>
+                    </form>
+
+                    <p class="wy-convert-empty" id="convert-empty-copy">Enter Kwacha to convert MWK to USD.</p>
+                </section>
             </section>
 
-            <section class="mt-4 rounded-lg border border-zinc-200 bg-white">
-                <div class="border-b border-zinc-200 px-4 py-3">
-                    <h2 class="font-semibold text-black">Recent conversions</h2>
-                </div>
-                <div class="divide-y divide-zinc-800">
+            <section class="wy-convert-history mt-4">
+                <h2 class="wy-convert-section-title">Recent conversions</h2>
+                <div class="mt-3 divide-y divide-zinc-200">
                     @forelse ($recentConversions as $conversion)
-                        <div class="px-4 py-4 text-sm">
+                        <div class="py-3 text-sm">
                             <div class="flex flex-wrap items-center justify-between gap-3">
                                 <span class="font-semibold text-black">{{ number_format($conversion->quote->from_amount_minor / 100, 2) }} MWK → {{ number_format($conversion->quote->to_amount_minor / 100, 2) }} USD</span>
                                 <span class="text-zinc-500">{{ $conversion->created_at->diffForHumans() }}</span>
@@ -133,11 +106,115 @@
                             <p class="mt-1 text-xs text-zinc-500">Rate {{ number_format((float) $conversion->quote->effective_rate, 4) }} · {{ $conversion->status }}</p>
                         </div>
                     @empty
-                        <p class="px-4 py-8 text-sm text-zinc-500">No conversions yet.</p>
+                        <p class="py-4 text-sm text-zinc-500">No conversions yet.</p>
                     @endforelse
                 </div>
             </section>
         </main>
+        <script>
+            (function () {
+                const rate = {{ json_encode((float) $spot['rate']) }};
+                const minMwkAmount = {{ json_encode(number_format($minMwkMinor / 100, 2, '.', '')) }};
+                let inputMode = 'MWK';
+
+                const formEl = document.querySelector('.wy-convert-form');
+                const amountEl = document.getElementById('convert_amount');
+                const previewEl = document.getElementById('convert-preview');
+                const submitBtn = formEl.querySelector('button[type="submit"]');
+                const switchBtn = document.getElementById('convert-switch');
+                const switchCurrent = document.getElementById('convert-switch-current');
+                const switchNext = document.getElementById('convert-switch-next');
+                const labelEl = document.getElementById('convert-amount-label');
+                const currencyCodeEl = document.getElementById('convert-currency-code');
+                const emptyCopyEl = document.getElementById('convert-empty-copy');
+
+                function fmt(n, d) {
+                    return Number(n).toLocaleString(undefined, { minimumFractionDigits: d, maximumFractionDigits: d });
+                }
+
+                function syncAmountSize() {
+                    const digitCount = amountEl.value.replace(/[^0-9]/g, '').length;
+                    let size = '3rem';
+
+                    if (digitCount > 10) {
+                        size = '1.85rem';
+                    } else if (digitCount > 8) {
+                        size = '2.1rem';
+                    } else if (digitCount > 6) {
+                        size = '2.45rem';
+                    } else if (digitCount > 4) {
+                        size = '2.75rem';
+                    }
+
+                    amountEl.parentElement.style.setProperty('--wy-amount-font-size', size);
+                }
+
+                function syncModeUi() {
+                    labelEl.textContent = inputMode === 'MWK' ? "You're converting" : "You want dollars";
+                    currencyCodeEl.textContent = inputMode;
+                    currencyCodeEl.classList.toggle('wy-currency-symbol-long', inputMode === 'MWK');
+                    switchCurrent.textContent = inputMode;
+                    switchNext.textContent = inputMode === 'MWK' ? 'USD' : 'MWK';
+                    amountEl.min = inputMode === 'MWK' ? minMwkAmount : '0.01';
+                    switchBtn.setAttribute('aria-label', inputMode === 'MWK' ? 'Enter USD instead' : 'Enter MWK instead');
+                    if (emptyCopyEl) {
+                        emptyCopyEl.textContent = inputMode === 'MWK'
+                            ? 'Enter Kwacha to convert MWK to USD.'
+                            : 'Enter Dollars to see the required Kwacha.';
+                    }
+                }
+
+                function recalc() {
+                    syncModeUi();
+                    syncAmountSize();
+                    const raw = parseFloat(amountEl.value);
+                    if (!Number.isFinite(raw) || raw <= 0) {
+                        previewEl.textContent = inputMode === 'MWK' ? '≈ 0.00 USD' : 'Requires 0.00 MWK';
+                        submitBtn.textContent = 'Convert MWK to dollars';
+                        return;
+                    }
+
+                    if (inputMode === 'MWK') {
+                        previewEl.textContent = '≈ ' + fmt(raw / rate, 2) + ' USD';
+                        submitBtn.textContent = 'Convert ' + fmt(raw, 2) + ' MWK';
+                        return;
+                    }
+
+                    const mwkNeeded = raw * rate;
+                    previewEl.textContent = 'Requires ' + fmt(mwkNeeded, 2) + ' MWK';
+                    submitBtn.textContent = 'Convert ' + fmt(mwkNeeded, 2) + ' MWK';
+                }
+
+                function setMode(nextMode) {
+                    inputMode = nextMode;
+                    recalc();
+                    amountEl.focus();
+                }
+
+                amountEl.addEventListener('input', recalc);
+                amountEl.addEventListener('keyup', recalc);
+                amountEl.addEventListener('change', recalc);
+                amountEl.addEventListener('paste', function () {
+                    window.setTimeout(recalc, 0);
+                });
+                switchBtn.addEventListener('click', function () {
+                    setMode(inputMode === 'MWK' ? 'USD' : 'MWK');
+                });
+                formEl.addEventListener('submit', function () {
+                    if (inputMode !== 'USD') {
+                        return;
+                    }
+
+                    const raw = parseFloat(amountEl.value);
+                    if (Number.isFinite(raw) && raw > 0) {
+                        amountEl.value = (raw * rate).toFixed(2);
+                    }
+                });
+                recalc();
+                window.setTimeout(recalc, 0);
+                window.setTimeout(recalc, 150);
+            })();
+        </script>
         @include('partials.mobile-nav')
     </body>
 </html>

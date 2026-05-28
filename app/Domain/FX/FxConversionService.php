@@ -46,6 +46,13 @@ class FxConversionService
         ]);
     }
 
+    public function convertMwkToUsd(User $user, int $mwkAmountMinor): FxConversion
+    {
+        $quote = $this->quoteMwkToUsd($user, $mwkAmountMinor);
+
+        return $this->acceptQuote($quote);
+    }
+
     public function acceptQuote(FxQuote $quote): FxConversion
     {
         return DB::transaction(function () use ($quote): FxConversion {

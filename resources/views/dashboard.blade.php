@@ -16,7 +16,7 @@
             $usdBalance = ($usdWallet?->cached_balance_minor ?? 0) / 100;
             $mwkBalance = ($mwkWallet?->cached_balance_minor ?? 0) / 100;
             $cardLastFour = $primaryCard?->masked_pan ? substr(preg_replace('/\D/', '', $primaryCard->masked_pan), -4) : '1234';
-            $activityItems = $ledgerTransactions->take(4);
+            $activityItems = $timelineItems->take(4);
             $hour = now()->hour;
             $timeGreeting = match (true) {
                 $hour < 12 => 'M’mawa wabwino',
@@ -129,29 +129,37 @@
                 <section class="mt-6 rounded-t-[30px] bg-[#f5f6f8] px-0 pb-4 pt-5 lg:mt-0 lg:rounded-[34px] lg:p-7">
                     <div class="flex items-center justify-between px-1">
                         <h2 class="text-[27px] font-semibold tracking-normal text-black sm:text-[30px]">Recent Activity</h2>
-                        <button type="button" class="rounded-full border border-zinc-400/70 bg-white px-4 py-2 text-[15px] font-medium text-black shadow-sm sm:px-5 sm:text-[17px]">
-                            October⌄
-                        </button>
+                        <a href="{{ route('wallet.activity') }}" class="rounded-full border border-zinc-400/70 bg-white px-4 py-2 text-[15px] font-medium text-black shadow-sm sm:px-5 sm:text-[17px]">
+                            View all
+                        </a>
                     </div>
 
                     <div class="mt-5 space-y-3 sm:mt-6 sm:space-y-4">
-                        @forelse ($activityItems as $transaction)
+                        @forelse ($activityItems as $item)
                             @php
-                                $type = str_replace('_', ' ', $transaction->type);
-                                $isConversion = str_contains($transaction->type, 'conversion') || str_contains($transaction->type, 'fx');
-                                $isDeposit = str_contains($transaction->type, 'deposit');
-                                $amountLabel = $isDeposit ? '+MWK' : ($isConversion ? '+USD' : 'MWK');
-                                $iconBg = $isDeposit ? 'bg-emerald-100' : ($isConversion ? 'bg-sky-100' : 'bg-violet-100');
+                                $iconBg = match ($item['tone']) {
+                                    'emerald' => 'bg-emerald-100',
+                                    'sky' => 'bg-sky-100',
+                                    'violet' => 'bg-violet-100',
+                                    'amber' => 'bg-amber-100',
+                                    default => 'bg-zinc-100',
+                                };
                             @endphp
                             <article class="flex items-center justify-between gap-3 rounded-[20px] bg-white p-3 shadow-[0_14px_32px_rgba(15,23,42,0.06)] sm:gap-4 sm:p-4">
                                 <div class="flex min-w-0 items-center gap-3 sm:gap-4">
                                     <span class="flex h-14 w-14 shrink-0 items-center justify-center rounded-full {{ $iconBg }} text-black sm:h-16 sm:w-16">
-                                        @if ($isConversion)
+                                        @if ($item['direction'] === 'exchange')
                                             <svg viewBox="0 0 24 24" class="h-7 w-7 sm:h-8 sm:w-8" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
                                                 <path d="M17 3l4 4-4 4" />
                                                 <path d="M3 7h18" />
                                                 <path d="M7 21l-4-4 4-4" />
                                                 <path d="M21 17H3" />
+                                            </svg>
+                                        @elseif ($item['direction'] === 'out')
+                                            <svg viewBox="0 0 24 24" class="h-7 w-7 sm:h-8 sm:w-8" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+                                                <path d="M12 20V6" />
+                                                <path d="M6 12l6-6 6 6" />
+                                                <path d="M5 21h14" />
                                             </svg>
                                         @else
                                             <svg viewBox="0 0 24 24" class="h-7 w-7 sm:h-8 sm:w-8" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
@@ -162,13 +170,13 @@
                                         @endif
                                     </span>
                                     <div class="min-w-0">
-                                        <p class="truncate text-[19px] font-semibold capitalize text-black sm:text-[22px]">{{ $type }}</p>
-                                        <p class="mt-1 truncate text-[15px] text-zinc-500 sm:text-[17px]">{{ $transaction->status }}</p>
+                                        <p class="truncate text-[19px] font-semibold text-black sm:text-[22px]">{{ $item['title'] }}</p>
+                                        <p class="mt-1 truncate text-[15px] text-zinc-500 sm:text-[17px]">{{ $item['subtitle'] }}</p>
                                     </div>
                                 </div>
                                 <div class="shrink-0 text-right">
-                                    <p class="text-[18px] font-semibold text-black sm:text-[21px]">{{ $amountLabel }}</p>
-                                    <p class="mt-1 text-[14px] text-zinc-500 sm:text-[16px]">{{ optional($transaction->posted_at)->format('g:iA') ?: $transaction->created_at->format('M j') }}</p>
+                                    <p class="text-[18px] font-semibold text-black sm:text-[21px]">{{ $item['amount_label'] }}</p>
+                                    <p class="mt-1 text-[14px] text-zinc-500 sm:text-[16px]">{{ $item['occurred_at']->format('M j, g:iA') }}</p>
                                 </div>
                             </article>
                         @empty

@@ -2,12 +2,15 @@
 
 namespace Tests\Feature;
 
+use App\Domain\Ledger\LedgerService;
+use App\Domain\Wallet\WalletService;
 use App\Enums\KycProfileStatus;
 use App\Models\CardProviderProfile;
 use App\Models\KycProfile;
 use App\Models\User;
 use App\Models\UserProfile;
 use App\Models\Wallet;
+use Database\Seeders\DatabaseSeeder;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\Http;
 use Tests\TestCase;
@@ -15,6 +18,13 @@ use Tests\TestCase;
 class VirtualCardTest extends TestCase
 {
     use RefreshDatabase;
+
+    protected function setUp(): void
+    {
+        parent::setUp();
+
+        config(['services.cards.issuer' => 'sandbox']);
+    }
 
     public function test_approved_user_can_view_virtual_card_page_with_balances(): void
     {
@@ -225,6 +235,138 @@ class VirtualCardTest extends TestCase
         ]);
     }
 
+    public function test_user_can_freeze_and_unfreeze_sandbox_card(): void
+    {
+        $this->withoutVite();
+
+        $user = $this->approvedUser(usdBalanceMinor: 2500);
+
+        $card = $user->virtualCards()->create([
+            'provider' => 'sandbox',
+            'provider_card_id' => 'sandbox_card_123',
+            'masked_pan' => '424242******1234',
+            'brand' => 'Visa',
+            'currency' => 'USD',
+            'status' => 'active',
+        ]);
+
+        $this->actingAs($user)
+            ->post(route('wallet.cards.freeze', $card))
+            ->assertRedirect(route('wallet.cards'))
+            ->assertSessionHas('status', 'Virtual card has been frozen.');
+
+        $this->assertDatabaseHas('virtual_cards', [
+            'provider_card_id' => 'sandbox_card_123',
+            'status' => 'inactive',
+        ]);
+
+        $this->actingAs($user)
+            ->post(route('wallet.cards.unfreeze', $card->fresh()))
+            ->assertRedirect(route('wallet.cards'))
+            ->assertSessionHas('status', 'Virtual card has been reactivated.');
+
+        $this->assertDatabaseHas('virtual_cards', [
+            'provider_card_id' => 'sandbox_card_123',
+            'status' => 'active',
+        ]);
+    }
+
+    public function test_user_can_top_up_active_card_from_usd_wallet(): void
+    {
+        $this->seed(DatabaseSeeder::class);
+
+        $user = $this->approvedUser(usdBalanceMinor: 5000);
+        $this->creditUsdWallet($user, 5000);
+
+        $card = $user->virtualCards()->create([
+            'provider' => 'sandbox',
+            'provider_card_id' => 'sandbox_card_123',
+            'masked_pan' => '424242******1234',
+            'brand' => 'Visa',
+            'currency' => 'USD',
+            'status' => 'active',
+        ]);
+
+        $this->actingAs($user)
+            ->post(route('wallet.cards.top-up', $card), ['amount' => '20.00'])
+            ->assertRedirect(route('wallet.cards'))
+            ->assertSessionHas('status', 'Virtual card funded with USD 20.00.');
+
+        $this->assertDatabaseHas('wallets', [
+            'user_id' => $user->id,
+            'currency' => 'USD',
+            'type' => 'main',
+            'cached_balance_minor' => 3000,
+        ]);
+
+        $this->assertDatabaseHas('wallets', [
+            'user_id' => $user->id,
+            'currency' => 'USD',
+            'type' => "card_{$card->id}",
+            'cached_balance_minor' => 2000,
+        ]);
+
+        $this->assertDatabaseHas('card_transactions', [
+            'virtual_card_id' => $card->id,
+            'type' => 'top_up',
+            'currency' => 'USD',
+            'amount_minor' => 2000,
+            'status' => 'posted',
+        ]);
+    }
+
+    public function test_user_cannot_top_up_card_without_enough_usd(): void
+    {
+        $this->seed(DatabaseSeeder::class);
+
+        $user = $this->approvedUser(usdBalanceMinor: 500);
+        $this->creditUsdWallet($user, 500);
+
+        $card = $user->virtualCards()->create([
+            'provider' => 'sandbox',
+            'provider_card_id' => 'sandbox_card_123',
+            'masked_pan' => '424242******1234',
+            'brand' => 'Visa',
+            'currency' => 'USD',
+            'status' => 'active',
+        ]);
+
+        $this->actingAs($user)
+            ->post(route('wallet.cards.top-up', $card), ['amount' => '20.00'])
+            ->assertSessionHasErrors('amount');
+
+        $this->assertDatabaseMissing('card_transactions', [
+            'virtual_card_id' => $card->id,
+            'type' => 'top_up',
+        ]);
+    }
+
+    public function test_user_cannot_top_up_frozen_card(): void
+    {
+        $this->seed(DatabaseSeeder::class);
+
+        $user = $this->approvedUser(usdBalanceMinor: 5000);
+        $this->creditUsdWallet($user, 5000);
+
+        $card = $user->virtualCards()->create([
+            'provider' => 'sandbox',
+            'provider_card_id' => 'sandbox_card_123',
+            'masked_pan' => '424242******1234',
+            'brand' => 'Visa',
+            'currency' => 'USD',
+            'status' => 'inactive',
+        ]);
+
+        $this->actingAs($user)
+            ->post(route('wallet.cards.top-up', $card), ['amount' => '20.00'])
+            ->assertSessionHasErrors('amount');
+
+        $this->assertDatabaseMissing('card_transactions', [
+            'virtual_card_id' => $card->id,
+            'type' => 'top_up',
+        ]);
+    }
+
     private function approvedUser(int $usdBalanceMinor): User
     {
         $user = User::factory()->create([
@@ -266,5 +408,25 @@ class VirtualCardTest extends TestCase
         ]);
 
         return $user;
+    }
+
+    private function creditUsdWallet(User $user, int $amountMinor): void
+    {
+        app(WalletService::class)->ensureUserWallet($user, 'USD');
+
+        app(LedgerService::class)->post('test_usd_credit', "test_usd_credit:{$user->id}:{$amountMinor}", [
+            [
+                'account_code' => 'SYS:FX_POSITION:USD',
+                'direction' => 'debit',
+                'currency' => 'USD',
+                'amount_minor' => $amountMinor,
+            ],
+            [
+                'account_code' => "USER:{$user->id}:USD:main",
+                'direction' => 'credit',
+                'currency' => 'USD',
+                'amount_minor' => $amountMinor,
+            ],
+        ]);
     }
 }
