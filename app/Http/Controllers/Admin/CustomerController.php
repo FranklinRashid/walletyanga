@@ -62,6 +62,11 @@ class CustomerController extends Controller
                 UserRoles::OPERATIONS_ADMIN,
                 UserRoles::SUPPORT_AGENT,
             ], true),
+            'canManageCustomers' => in_array(auth()->user()->role, [
+                UserRoles::SUPER_ADMIN,
+                UserRoles::OPERATIONS_ADMIN,
+                UserRoles::SUPPORT_AGENT,
+            ], true),
             'canRevokeKyc' => in_array(auth()->user()->role, [
                 UserRoles::SUPER_ADMIN,
                 UserRoles::COMPLIANCE_OFFICER,
@@ -115,6 +120,52 @@ class CustomerController extends Controller
         return redirect()
             ->route('admin.customers.show', $customer)
             ->with('status', 'Customer KYC approval revoked.');
+    }
+
+    public function suspend(Request $request, User $customer): RedirectResponse
+    {
+        abort_unless($customer->role === UserRoles::CUSTOMER, 404);
+        $this->assertCanManageCustomers($request);
+
+        $validated = $request->validate([
+            'reason' => ['required', 'string', 'max:1000'],
+        ]);
+
+        if ($customer->status === 'suspended') {
+            return redirect()
+                ->route('admin.customers.show', $customer)
+                ->with('status', 'Customer is already suspended.');
+        }
+
+        $before = $customer->status;
+        $customer->forceFill(['status' => 'suspended'])->save();
+
+        $this->recordCustomerAction($request, 'customer.suspended', $customer, $before, $customer->status, $validated['reason']);
+
+        return redirect()
+            ->route('admin.customers.show', $customer)
+            ->with('status', 'Customer account suspended.');
+    }
+
+    public function activate(Request $request, User $customer): RedirectResponse
+    {
+        abort_unless($customer->role === UserRoles::CUSTOMER, 404);
+        $this->assertCanManageCustomers($request);
+
+        if ($customer->status === 'active') {
+            return redirect()
+                ->route('admin.customers.show', $customer)
+                ->with('status', 'Customer is already active.');
+        }
+
+        $before = $customer->status;
+        $customer->forceFill(['status' => 'active'])->save();
+
+        $this->recordCustomerAction($request, 'customer.activated', $customer, $before, $customer->status);
+
+        return redirect()
+            ->route('admin.customers.show', $customer)
+            ->with('status', 'Customer account activated.');
     }
 
     public function freezeCard(Request $request, User $customer, VirtualCard $card, VirtualCardService $cards): RedirectResponse
@@ -175,6 +226,15 @@ class CustomerController extends Controller
         ], true), 403);
     }
 
+    private function assertCanManageCustomers(Request $request): void
+    {
+        abort_unless(in_array($request->user()->role, [
+            UserRoles::SUPER_ADMIN,
+            UserRoles::OPERATIONS_ADMIN,
+            UserRoles::SUPPORT_AGENT,
+        ], true), 403);
+    }
+
     private function recordCardAction(Request $request, string $action, VirtualCard $card, string $before, string $after): void
     {
         AdminAction::query()->create([
@@ -184,6 +244,20 @@ class CustomerController extends Controller
             'subject_id' => $card->id,
             'before' => ['status' => $before],
             'after' => ['status' => $after],
+            'ip_address' => $request->ip(),
+        ]);
+    }
+
+    private function recordCustomerAction(Request $request, string $action, User $customer, string $before, string $after, ?string $reason = null): void
+    {
+        AdminAction::query()->create([
+            'admin_user_id' => $request->user()->id,
+            'action' => $action,
+            'subject_type' => User::class,
+            'subject_id' => $customer->id,
+            'before' => ['status' => $before],
+            'after' => ['status' => $after],
+            'reason' => $reason,
             'ip_address' => $request->ip(),
         ]);
     }

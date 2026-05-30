@@ -2,11 +2,13 @@
 
 namespace Tests\Feature;
 
+use App\Domain\Payments\PaychanguClient;
 use App\Models\DepositIntent;
 use App\Models\User;
 use Database\Seeders\DatabaseSeeder;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\Http;
+use RuntimeException;
 use Tests\TestCase;
 
 class PaychanguCallbackTest extends TestCase
@@ -58,5 +60,34 @@ class PaychanguCallbackTest extends TestCase
         $response = $this->get('/webhooks/paychangu?tx_ref=WY-DEP-LEGACY');
 
         $response->assertRedirect(route('paychangu.callback', ['tx_ref' => 'WY-DEP-LEGACY']));
+    }
+
+    public function test_unsigned_paychangu_webhook_is_rejected_outside_local_environments(): void
+    {
+        $this->app['env'] = 'production';
+
+        $this->postJson(route('webhooks.paychangu'), [
+            'event_id' => 'evt_unsigned',
+            'tx_ref' => 'WY-DEP-MISSING',
+            'event_type' => 'payment.success',
+        ])->assertUnauthorized()
+            ->assertJson(['message' => 'Invalid signature']);
+
+        $this->assertDatabaseHas('payment_gateway_events', [
+            'provider' => 'paychangu',
+            'event_id' => 'evt_unsigned',
+            'processing_status' => 'rejected',
+            'processing_error' => 'Invalid signature',
+        ]);
+    }
+
+    public function test_missing_paychangu_secret_cannot_fake_verification_outside_local_environments(): void
+    {
+        $this->app['env'] = 'production';
+
+        $this->expectException(RuntimeException::class);
+        $this->expectExceptionMessage('Paychangu secret key is not configured.');
+
+        (new PaychanguClient)->verifyPayment('WY-DEP-PROD');
     }
 }

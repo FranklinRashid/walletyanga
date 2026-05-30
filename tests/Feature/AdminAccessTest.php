@@ -12,6 +12,7 @@ use App\Models\UserProfile;
 use App\Support\UserRoles;
 use Database\Seeders\DatabaseSeeder;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Support\Facades\Hash;
 use Tests\TestCase;
 
 class AdminAccessTest extends TestCase
@@ -212,6 +213,114 @@ class AdminAccessTest extends TestCase
             'id' => $kyc->id,
             'status' => KycProfileStatus::APPROVED->value,
         ]);
+    }
+
+    public function test_operations_admin_can_suspend_and_activate_customer_account(): void
+    {
+        $this->seed(DatabaseSeeder::class);
+        $this->withoutVite();
+
+        $admin = User::factory()->create([
+            'role' => UserRoles::OPERATIONS_ADMIN,
+            'status' => 'active',
+        ]);
+
+        $customer = $this->customerWithFundedCard();
+
+        $this->actingAs($admin)
+            ->post(route('admin.customers.suspend', $customer), [
+                'reason' => 'Suspicious account activity.',
+            ])
+            ->assertRedirect(route('admin.customers.show', $customer))
+            ->assertSessionHas('status', 'Customer account suspended.');
+
+        $this->assertDatabaseHas('users', [
+            'id' => $customer->id,
+            'status' => 'suspended',
+        ]);
+
+        $this->assertDatabaseHas('admin_actions', [
+            'admin_user_id' => $admin->id,
+            'action' => 'customer.suspended',
+            'subject_id' => $customer->id,
+            'reason' => 'Suspicious account activity.',
+        ]);
+
+        $this->actingAs($admin)
+            ->post(route('admin.customers.activate', $customer))
+            ->assertRedirect(route('admin.customers.show', $customer))
+            ->assertSessionHas('status', 'Customer account activated.');
+
+        $this->assertDatabaseHas('users', [
+            'id' => $customer->id,
+            'status' => 'active',
+        ]);
+
+        $this->assertDatabaseHas('admin_actions', [
+            'admin_user_id' => $admin->id,
+            'action' => 'customer.activated',
+            'subject_id' => $customer->id,
+        ]);
+    }
+
+    public function test_compliance_officer_cannot_suspend_customer_account(): void
+    {
+        $this->seed(DatabaseSeeder::class);
+        $this->withoutVite();
+
+        $admin = User::factory()->create([
+            'role' => UserRoles::COMPLIANCE_OFFICER,
+            'status' => 'active',
+        ]);
+
+        $customer = $this->customerWithFundedCard();
+
+        $this->actingAs($admin)
+            ->post(route('admin.customers.suspend', $customer), [
+                'reason' => 'Compliance tried to suspend.',
+            ])
+            ->assertForbidden();
+
+        $this->assertDatabaseHas('users', [
+            'id' => $customer->id,
+            'status' => 'active',
+        ]);
+    }
+
+    public function test_suspended_customer_cannot_log_in(): void
+    {
+        $this->withoutVite();
+
+        User::factory()->create([
+            'email' => 'suspended@example.com',
+            'password' => Hash::make('password'),
+            'role' => UserRoles::CUSTOMER,
+            'status' => 'suspended',
+        ]);
+
+        $this->post(route('login'), [
+            'email' => 'suspended@example.com',
+            'password' => 'password',
+        ])->assertSessionHasErrors('email');
+
+        $this->assertGuest();
+    }
+
+    public function test_authenticated_suspended_customer_is_logged_out_from_wallet_routes(): void
+    {
+        $this->withoutVite();
+
+        $customer = User::factory()->create([
+            'role' => UserRoles::CUSTOMER,
+            'status' => 'suspended',
+        ]);
+
+        $this->actingAs($customer)
+            ->get(route('wallet.dashboard'))
+            ->assertRedirect(route('login'))
+            ->assertSessionHasErrors('email');
+
+        $this->assertGuest();
     }
 
     private function customerWithFundedCard(): User

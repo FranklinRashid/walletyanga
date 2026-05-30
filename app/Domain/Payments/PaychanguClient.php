@@ -3,6 +3,7 @@
 namespace App\Domain\Payments;
 
 use Illuminate\Support\Facades\Http;
+use RuntimeException;
 
 class PaychanguClient
 {
@@ -20,6 +21,10 @@ class PaychanguClient
     public function createCheckout(array $payload): array
     {
         if (! $this->secretKey) {
+            if (! app()->environment(['local', 'testing'])) {
+                throw new RuntimeException('Paychangu secret key is not configured.');
+            }
+
             return [
                 'status' => 'sandbox',
                 'checkout_url' => url('/sandbox/paychangu/'.($payload['tx_ref'] ?? 'missing-reference')),
@@ -36,6 +41,10 @@ class PaychanguClient
     public function verifyPayment(string $txRef): array
     {
         if (! $this->secretKey) {
+            if (! app()->environment(['local', 'testing'])) {
+                throw new RuntimeException('Paychangu secret key is not configured.');
+            }
+
             return ['status' => 'success', 'tx_ref' => $txRef, 'sandbox' => true];
         }
 
@@ -49,7 +58,7 @@ class PaychanguClient
     public function isValidWebhookSignature(string $rawPayload, ?string $signature): bool
     {
         if (! $this->webhookSecret) {
-            return true;
+            return app()->environment(['local', 'testing']);
         }
 
         if (! $signature) {
